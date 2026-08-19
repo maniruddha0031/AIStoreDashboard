@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/trend-modal.css">
+<link rel="stylesheet" href="assets/chatbot.css">
+<link rel="stylesheet" href="assets/ai-hub.css">
+<link rel="stylesheet" href="assets/pulse-index.css">
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+<!-- TOP BAR -->
+<div class="h-14 bg-[#0b2545] text-white flex items-center justify-between px-5 shrink-0">
+  <div class="flex items-center gap-6 top-text">
+    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-sm">
+      <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+    </div>
+
+    <div class="relative">
+      <button id="myAppsBtn" onclick="toggleMenu('myAppsMenu')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition">
+        <i data-lucide="grip" class="w-4 h-4"></i>
+        <span>My App</span>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-[#7db4f8]"></i>
+      </button>
+      <div id="myAppsMenu" data-dropdown-menu data-trigger="myAppsBtn"
+        class="hidden absolute left-0 mt-2 w-60 bg-white text-slate-700 rounded-xl shadow-xl border border-slate-100 text-[13.5px] py-2 z-[90]"></div>
+    </div>
+
+    <div class="flex items-center gap-2 opacity-90">
+      <i data-lucide="map-pin" class="w-4 h-4"></i>
+      <span>236 - Bressi Ranch</span>
+      <i data-lucide="chevron-down" class="w-4 h-4"></i>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-5 top-text">
+    <div class="flex items-center gap-2">
+      <i data-lucide="cloud" class="w-4 h-4"></i>
+      <span>75°F</span>
+    </div>
+    <div class="border-l border-blue-700 h-5"></div>
+    <div id="topClock">04:40 AM AMERICA/LOS ANGELES</div>
+
+    <div class="relative">
+      <button id="storeBtn" onclick="toggleMenu('storeMenu')" class="bg-white text-slate-700 px-4 py-1 rounded-full flex items-center gap-2">
+        <i data-lucide="building-2" class="w-4 h-4"></i>
+        Original Fish Taco, LLC
+        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+      </button>
+      <div id="storeMenu" data-dropdown-menu data-trigger="storeBtn"
+        class="hidden absolute right-0 mt-2 w-56 bg-white text-slate-700 rounded-lg shadow-lg text-[13px] z-[90]">
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">085 - Del Mar</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">086 - Santa Ana</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">087 - Riverside</div>
+      </div>
+    </div>
+
+    <a href="settings.html?scope=global" title="Settings" class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition">
+      <i data-lucide="settings" class="w-4 h-4"></i>
+    </a>
+    <button title="My Profile" class="w-8 h-8 rounded-full bg-slate-200 hover:ring-2 hover:ring-white/60 transition flex items-center justify-center overflow-hidden">
+      <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+    </button>
+  </div>
+</div>
+
+<div class="flex flex-1 min-h-0">
+
+  <!-- SIDEBAR (3 menus only) -->
+  <div class="sidebar bg-[#0b2545] text-white flex flex-col justify-between shrink-0">
+    <div class="pt-2 w-full">
+      <a href="index.html" class="menu-item active px-4 py-3">
+        <i data-lucide="layout-dashboard"></i>
+        <span class="label">Dashboard</span>
+      </a>
+      <a href="settings.html?scope=global" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="settings"></i>
+        <span class="label">Global Setting</span>
+      </a>
+      <a href="settings.html?scope=organization" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="building-2"></i>
+        <span class="label">Organization Setting</span>
+      </a>
+      <a href="org-dashboard.html" id="sideAiOrgLink" class="menu-item px-4 py-3 opacity-90 hidden">
+        <i data-lucide="presentation"></i>
+        <span class="label">AI Org Dashboard</span>
+      </a>
+    </div>
+    <div class="pb-4"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#eef2f7]">
+    <div class="flex-1 px-6 pt-4 pb-6 overflow-y-auto">
+
+      <!-- TAB ROW + DATE (moved to the right) -->
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <div id="dashTabBar" class="flex items-center gap-4 flex-wrap"></div>
+
+        <div class="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
+          <div class="relative flex items-center justify-center w-6 h-6">
+            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+            <input type="date" id="dashDatePicker" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+          </div>
+          <span id="dashDateLabel" class="text-[14px] font-semibold text-slate-700">08/05/2023</span>
+        </div>
+      </div>
+
+      <div id="dashPanels"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- AI INSIGHT MODAL -->
+<div id="aiInsightModal" class="hidden modal-overlay" onclick="if(event.target===this) closeAiInsight()">
+  <div class="modal-box" style="width:min(900px,92vw); max-height:86vh; overflow:auto;">
+    <div class="flex items-center justify-between px-7 pt-6 pb-2">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(135deg,#C026D3,#7C3AED,#5B5BD6)">
+          <i data-lucide="lightbulb" class="w-5 h-5"></i>
+        </div>
+        <h2 class="text-lg font-bold text-slate-800 tracking-wide">AI INSIGHT</h2>
+      </div>
+      <button onclick="closeAiInsight()" class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="grid gap-4 p-7 pt-4" style="grid-template-columns:1fr 1fr;">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <div class="font-semibold text-slate-800 mb-3">Daily recommendations</div>
+        <div class="flex flex-col gap-2">
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">Labor +0.8% vs target; overspend during 2–5 PM (West stores).</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">SPLH at $58.10; overstaffing in 2–4 PM window.</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">Sales +12.4% YoY; low attachment in select stores.</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">8 stores exceeding labor budgets by ~4% today.</div>
+        </div>
+      </div>
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <div class="font-semibold text-slate-800 mb-3">Weekly recommendations</div>
+        <div class="flex flex-col gap-2">
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">Labor +1.6% vs target; weekends driving most variance.</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">SPLH ↓4% WoW; consistent overstaffing pattern.</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">18–22% performance gap between top and bottom stores.</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700" style="border-left:3px solid #a855f7">Sales +10.8% WoW; attachment gap ~12% across stores.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KPI / SECTION TREND MODAL (ported from AI Org Dashboard.html) -->
+<div id="kpi-modal-root"></div>
+
+<!-- AI CHATBOT WIDGET (Eva) -->
+<div class="chatbot-widget" id="chatbotWidget">
+  <div class="chatbot-container" id="chatbotContainer">
+    <div class="chatbot-bubble">
+      <div class="chatbot-bubble-inner">
+        <div class="chatbot-avatar">
+          <img src="assets/chatbotgirl.png" alt="Eva AI Assistant" class="avatar-default">
+          <img src="assets/hoverchatbotgirl.png" alt="Eva AI Assistant" class="avatar-hover">
+        </div>
+        <div class="chatbot-text">
+          <div class="chatbot-question">Need help?</div>
+          <div class="chatbot-cta">Ask Eva</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chatbox-overlay" id="chatboxOverlay">
+  <div class="eva-sidebar collapsed" id="evaSidebar">
+    <div class="eva-sidebar-rail">
+      <button class="eva-rail-toggle" id="evaSidebarOpenBtn" title="Open sidebar">
+        <img src="assets/chatbotgirl.png" alt="Eva" class="eva-rail-avatar">
+        <i class="bi bi-layout-sidebar eva-rail-toggle-icon"></i>
+      </button>
+      <button class="eva-rail-btn" id="evaRailNewChat" title="New chat"><i class="bi bi-plus-lg"></i></button>
+      <button class="eva-rail-btn" id="evaRailSearch" title="Search questions"><i class="bi bi-search"></i></button>
+      <button class="eva-rail-btn eva-fav-btn" id="evaRailFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+      <button class="eva-user-chip-collapsed" id="evaUserChipCollapsed" title="Eva">E</button>
+    </div>
+    <div class="eva-sidebar-expanded">
+      <div class="eva-sidebar-header">
+        <img src="assets/chatbotgirl.png" alt="Eva">
+        <div>
+          <div class="eva-sidebar-header-text">Eva</div>
+          <div class="eva-sidebar-header-sub">AI Dashboard Assistant</div>
+        </div>
+        <button class="eva-sidebar-collapse-btn eva-fav-btn" id="evaHeaderFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+        <button class="eva-sidebar-collapse-btn" id="evaSidebarCollapseBtn" title="Close sidebar"><i class="bi bi-layout-sidebar"></i></button>
+      </div>
+      <button class="eva-new-chat-btn" id="evaNewChatBtn" title="Clear the current conversation and start over">
+        <i class="bi bi-plus-lg"></i> New chat
+      </button>
+      <div class="eva-sidebar-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="evaQuestionSearch" placeholder="Search questions...">
+      </div>
+      <div class="eva-sidebar-sections" id="evaSidebarSections"></div>
+      <div class="eva-sidebar-footer" id="evaSidebarFooter">
+        <div class="eva-user-menu" id="evaUserMenu">
+          <button class="eva-user-menu-item" id="evaDarkModeToggle">
+            <i class="bi bi-moon-stars"></i> <span id="evaDarkModeLabel">Dark mode</span>
+          </button>
+        </div>
+        <button class="eva-user-row" id="evaUserRow">
+          <span class="eva-user-avatar">DU</span>
+          <span class="eva-user-info">
+            <span class="eva-user-email-main">Dashboard User</span>
+            <span class="eva-user-email-sub">Signed in</span>
+          </span>
+          <i class="bi bi-chevron-up eva-user-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <button class="eva-fullscreen-close" id="evaFullscreenClose" title="Close"><i class="bi bi-x-lg"></i></button>
+  <div class="chatbox-panel" id="chatboxPanel">
+    <div class="chatbox-header">
+      <div class="chatbox-header-avatar">
+        <img src="assets/chatbotgirl.png" alt="Eva">
+      </div>
+      <div class="chatbox-header-text">
+        <div class="chatbox-header-subtitle">Hey there! I'm Eva</div>
+        <div class="chatbox-header-title">How can I help?</div>
+      </div>
+      <div class="chatbox-header-controls">
+        <button class="chatbox-ctrl-btn" id="chatboxFavourites" title="Saved Favourites" style="position:relative;" onclick="showFavouritesPanel()"><i class="bi bi-star"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClearChat" title="Clear Chat" onclick="clearChat()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxMaximize" title="Maximize"><i class="bi bi-arrows-angle-expand"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClose" title="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="chatbox-body" id="chatboxBody">
+      <div class="chat-msg" id="welcome-msg">
+        <div class="chat-msg-avatar">
+          <img src="assets/hoverchatbotgirl.png" alt="Eva">
+        </div>
+        <div class="welcome-bubble">
+          <b>Hi, how can I help you with your dashboards?</b>
+        </div>
+      </div>
+    </div>
+    <div class="chatbox-footer">
+      <div class="chatbox-input-wrap">
+        <input type="text" class="chatbox-input" id="chatboxInput" placeholder="Type your message here...">
+        <button class="chatbox-send-btn" id="chatboxSendBtn"><i class="bi bi-send-fill"></i></button>
+      </div>
+      <div class="chatbox-disclaimer">Eva can make mistakes - review information carefully.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dislike feedback modal -->
+<div class="eva-feedback-modal-overlay" id="evaFeedbackModalOverlay">
+  <div class="eva-feedback-modal">
+    <div class="eva-feedback-modal-header">
+      <div class="eva-feedback-modal-icon" id="evaFeedbackModalIcon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+      <div class="eva-feedback-modal-headtext">
+        <div class="eva-feedback-modal-title" id="evaFeedbackModalTitle">What went wrong?</div>
+        <div class="eva-feedback-modal-subtitle" id="evaFeedbackModalSubtitle">Help Eva give better answers</div>
+      </div>
+      <button class="eva-feedback-modal-close" id="evaFeedbackModalCloseBtn" title="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="eva-feedback-modal-body">
+      <div id="evaFeedbackStepSelect">
+        <div class="eva-feedback-label">Select an issue</div>
+        <div class="eva-feedback-options" id="evaFeedbackOptions">
+          <button class="eva-feedback-chip" data-issue="Wrong answer">Wrong answer</button>
+          <button class="eva-feedback-chip" data-issue="Missing information">Missing information</button>
+          <button class="eva-feedback-chip" data-issue="Didn't understand my question">Didn't understand my question</button>
+          <button class="eva-feedback-chip" data-issue="Confusing response">Confusing response</button>
+          <button class="eva-feedback-chip" data-issue="Incorrect data">Incorrect data</button>
+          <button class="eva-feedback-chip" data-issue="Something else">Something else</button>
+        </div>
+        <div class="eva-feedback-label">Additional notes <span id="evaFeedbackNotesRequired">(optional)</span></div>
+        <div class="eva-feedback-textarea-wrap">
+          <textarea id="evaFeedbackNotes" maxlength="255" placeholder="Describe the issue in more detail..."></textarea>
+          <span class="eva-feedback-char-count" id="evaFeedbackCharCount">0 / 255</span>
+        </div>
+      </div>
+      <div id="evaFeedbackStepSuccess" style="display:none;">
+        <div class="eva-feedback-success-row">
+          <div class="eva-feedback-success-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="eva-feedback-success-text">Your feedback has been noted. Eva will use it to improve the quality and accuracy of future responses.</div>
+        </div>
+      </div>
+    </div>
+    <div class="eva-feedback-modal-footer">
+      <button class="eva-feedback-send-btn" id="evaFeedbackActionBtn">Send Feedback</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/qa-attendance-scheduling.js"></script>
+<script src="assets/qa-overtime-management.js"></script>
+<script src="assets/qa-labor-cost-analysis.js"></script>
+<script src="assets/qa-payroll-exceptions.js"></script>
+<script src="assets/qa-analytics-insights.js"></script>
+<script src="assets/qa-recommendations.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/dashboard-data.js"></script>
+<script src="assets/ai-hub-data.js"></script>
+<script src="assets/trend-modal-engine.js"></script>
+<script src="assets/trend-modal.js"></script>
+<script src="assets/ai-hub-render.js"></script>
+<script src="assets/pulse-data.js"></script>
+<script src="assets/pulse-render.js"></script>
+<script src="assets/dashboard-render.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

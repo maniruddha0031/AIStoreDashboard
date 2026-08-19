@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — AI Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/chatbot.css">
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+<!-- TOP BAR (identical chrome to the Dashboard screen) -->
+<div class="h-14 bg-[#0b2545] text-white flex items-center justify-between px-5 shrink-0">
+  <div class="flex items-center gap-6 top-text">
+    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-sm">
+      <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+    </div>
+
+    <div class="relative">
+      <button id="myAppsBtn" onclick="toggleMenu('myAppsMenu')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition">
+        <i data-lucide="grip" class="w-4 h-4"></i>
+        <span>My App</span>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-[#7db4f8]"></i>
+      </button>
+      <div id="myAppsMenu" data-dropdown-menu data-trigger="myAppsBtn"
+        class="hidden absolute left-0 mt-2 w-60 bg-white text-slate-700 rounded-xl shadow-xl border border-slate-100 text-[13.5px] py-2 z-[90]"></div>
+    </div>
+
+    <div class="flex items-center gap-2 opacity-90">
+      <i data-lucide="map-pin" class="w-4 h-4"></i>
+      <span>236 - Bressi Ranch</span>
+      <i data-lucide="chevron-down" class="w-4 h-4"></i>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-5 top-text">
+    <div class="flex items-center gap-2">
+      <i data-lucide="cloud" class="w-4 h-4"></i>
+      <span>75°F</span>
+    </div>
+    <div class="border-l border-blue-700 h-5"></div>
+    <div id="topClock">04:40 AM AMERICA/LOS ANGELES</div>
+
+    <div class="relative">
+      <button id="storeBtn" onclick="toggleMenu('storeMenu')" class="bg-white text-slate-700 px-4 py-1 rounded-full flex items-center gap-2">
+        <i data-lucide="building-2" class="w-4 h-4"></i>
+        Original Fish Taco, LLC
+        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+      </button>
+      <div id="storeMenu" data-dropdown-menu data-trigger="storeBtn"
+        class="hidden absolute right-0 mt-2 w-56 bg-white text-slate-700 rounded-lg shadow-lg text-[13px] z-[90]">
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">085 - Del Mar</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">086 - Santa Ana</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">087 - Riverside</div>
+      </div>
+    </div>
+
+    <button title="My Profile" class="w-8 h-8 rounded-full bg-slate-200 hover:ring-2 hover:ring-white/60 transition flex items-center justify-center overflow-hidden">
+      <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+    </button>
+  </div>
+</div>
+
+<div class="flex flex-1 min-h-0">
+
+  <!-- SIDEBAR (3 menus only) -->
+  <div class="sidebar bg-[#0b2545] text-white flex flex-col justify-between shrink-0">
+    <div class="pt-2 w-full">
+      <a href="index.html" id="sideDashLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="layout-dashboard"></i>
+        <span class="label">Dashboard</span>
+      </a>
+      <a href="settings.html?scope=global" id="sideGlobalLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="settings"></i>
+        <span class="label">Global Setting</span>
+      </a>
+      <a href="settings.html?scope=organization" id="sideOrgLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="building-2"></i>
+        <span class="label">Organization Setting</span>
+      </a>
+      <a href="org-dashboard.html" id="sideAiOrgLink" class="menu-item px-4 py-3 opacity-90 hidden">
+        <i data-lucide="presentation"></i>
+        <span class="label">AI Org Dashboard</span>
+      </a>
+    </div>
+    <div class="pb-4"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#eef2f7]">
+    <div class="flex-1 px-6 pt-4 pb-6 overflow-y-auto">
+
+      <!-- LIST VIEW -->
+      <div id="listView">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-[18px] font-bold text-slate-800" id="scopeTitle">Global Setting</h1>
+          <div class="flex items-center gap-4">
+            <button class="pill-btn pill-blue" onclick="openEditor(null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add Dashboard</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mb-3">
+          <div class="relative">
+            <i data-lucide="search" style="width:14px;height:14px" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="dashSearchInput" oninput="onDashSearchInput(this.value)" placeholder="Search keyword"
+              class="w-56 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+          <div class="relative">
+            <button id="dashExportBtn" onclick="toggleMenu('dashExportMenu')" class="icon-btn" title="Export" style="width:38px;height:38px;">
+              <i data-lucide="printer" style="width:16px;height:16px"></i>
+            </button>
+            <div id="dashExportMenu" data-dropdown-menu data-trigger="dashExportBtn"
+              class="hidden absolute right-0 mt-2 w-44 bg-white text-slate-700 rounded-lg shadow-lg text-[13px] z-[90] py-1">
+              <div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="exportDashboardsCsv()"><i data-lucide="file-text" style="width:14px;height:14px"></i>CSV Export</div>
+              <div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="exportDashboardsPdf()"><i data-lucide="file-text" style="width:14px;height:14px"></i>PDF Export</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="w-full text-[13.5px]" id="dashboardsTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Display Order</th>
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Name</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Is Active</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600 hidden" id="defaultColHead">Default Landing</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EDITOR VIEW -->
+      <div id="editorView" class="hidden">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div class="flex items-center gap-2">
+            <button class="editor-tab active" data-tab="general" onclick="switchEditorTab('general')">General Settings</button>
+            <button class="editor-tab" data-tab="sections" onclick="switchEditorTab('sections')">Sections</button>
+            <button class="editor-tab" id="editorTabRoles" data-tab="roles" onclick="switchEditorTab('roles')">Roles</button>
+            <button class="editor-tab" data-tab="applications" onclick="switchEditorTab('applications')">Applications</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="pill-btn pill-red" onclick="backToList()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-green" onclick="saveEditor()"><i data-lucide="save" style="width:14px;height:14px"></i>Save</button>
+            <button id="copyDashBtn" class="pill-btn pill-blue" onclick="copyDashboard()"><i data-lucide="copy" style="width:14px;height:14px"></i>Copy Dashboard</button>
+          </div>
+        </div>
+
+        <div class="card p-6" id="editorBody"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SELECT COMPONENT MODAL -->
+<div id="componentModal" class="hidden modal-overlay" onclick="if(event.target===this) closeComponentModal()">
+  <div class="modal-box p-7" style="width:min(760px,92vw); max-height:86vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-2xl font-extrabold text-slate-800">Select Component</h2>
+      <button onclick="closeComponentModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="text-slate-500 text-[13.5px] mb-5">Choose a visual module to add to your layout</div>
+    <div class="grid gap-3" style="grid-template-columns:repeat(2,1fr);" id="componentModalGrid"></div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="deleteConfirmModal" class="hidden modal-overlay" onclick="if(event.target===this) closeDeleteConfirm()">
+  <div class="modal-box p-7" style="width:min(420px,92vw); text-align:center;">
+    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="trash-2" class="w-6 h-6 text-red-500"></i>
+    </div>
+    <div class="text-[15px] text-slate-600 mb-1">Are you sure you want to delete this Dashboard?</div>
+    <div class="text-[17px] font-bold text-slate-900 mb-6" id="deleteConfirmName"></div>
+    <div class="flex items-center justify-center gap-3">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeDeleteConfirm()">Cancel</button>
+      <button class="pill-btn pill-red" onclick="confirmDeleteDashboard()"><i data-lucide="trash-2" style="width:14px;height:14px"></i>Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTIONS TAB — GENERIC CONFIRM MODAL (Clear All / Replace Layout) -->
+<div id="sectionsConfirmModal" class="hidden modal-overlay" onclick="if(event.target===this) closeSectionsConfirm()">
+  <div class="modal-box p-7" style="width:min(440px,92vw); text-align:center;">
+    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="triangle-alert" class="w-6 h-6 text-red-500"></i>
+    </div>
+    <div class="text-[15px] font-bold text-slate-900 mb-1" id="sectionsConfirmTitle">Are you sure?</div>
+    <div class="text-[13px] text-slate-500 mb-6" id="sectionsConfirmBody"></div>
+    <div class="flex items-center justify-center gap-3">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeSectionsConfirm()">Cancel</button>
+      <button class="pill-btn pill-red" id="sectionsConfirmBtn" onclick="confirmSectionsAction()"><i data-lucide="check" style="width:14px;height:14px"></i>Yes, Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD LAYOUT SUGGESTIONS MODAL -->
+<div id="layoutSuggestModal" class="hidden modal-overlay" onclick="if(event.target===this) closeLayoutSuggestModal()">
+  <div class="modal-box p-7" style="width:min(820px,92vw); max-height:86vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-2xl font-extrabold text-slate-800">Dashboard Layout</h2>
+      <button onclick="closeLayoutSuggestModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="text-slate-500 text-[13.5px] mb-5">Pick a suggested layout to start from — you can still add, remove or rearrange KPIs and sections afterward.</div>
+    <div class="layout-suggest-grid" id="layoutSuggestModalGrid"></div>
+  </div>
+</div>
+
+<!-- AI CHATBOT WIDGET (Eva) -->
+<div class="chatbot-widget" id="chatbotWidget">
+  <div class="chatbot-container" id="chatbotContainer">
+    <div class="chatbot-bubble">
+      <div class="chatbot-bubble-inner">
+        <div class="chatbot-avatar">
+          <img src="assets/chatbotgirl.png" alt="Eva AI Assistant" class="avatar-default">
+          <img src="assets/hoverchatbotgirl.png" alt="Eva AI Assistant" class="avatar-hover">
+        </div>
+        <div class="chatbot-text">
+          <div class="chatbot-question">Need help?</div>
+          <div class="chatbot-cta">Ask Eva</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="chatbox-overlay" id="chatboxOverlay">
+  <div class="eva-sidebar collapsed" id="evaSidebar">
+    <div class="eva-sidebar-rail">
+      <button class="eva-rail-toggle" id="evaSidebarOpenBtn" title="Open sidebar">
+        <img src="assets/chatbotgirl.png" alt="Eva" class="eva-rail-avatar">
+        <i class="bi bi-layout-sidebar eva-rail-toggle-icon"></i>
+      </button>
+      <button class="eva-rail-btn" id="evaRailNewChat" title="New chat"><i class="bi bi-plus-lg"></i></button>
+      <button class="eva-rail-btn" id="evaRailSearch" title="Search questions"><i class="bi bi-search"></i></button>
+      <button class="eva-rail-btn eva-fav-btn" id="evaRailFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+      <button class="eva-user-chip-collapsed" id="evaUserChipCollapsed" title="Eva">E</button>
+    </div>
+    <div class="eva-sidebar-expanded">
+      <div class="eva-sidebar-header">
+        <img src="assets/chatbotgirl.png" alt="Eva">
+        <div>
+          <div class="eva-sidebar-header-text">Eva</div>
+          <div class="eva-sidebar-header-sub">AI Dashboard Assistant</div>
+        </div>
+        <button class="eva-sidebar-collapse-btn eva-fav-btn" id="evaHeaderFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+        <button class="eva-sidebar-collapse-btn" id="evaSidebarCollapseBtn" title="Close sidebar"><i class="bi bi-layout-sidebar"></i></button>
+      </div>
+      <button class="eva-new-chat-btn" id="evaNewChatBtn" title="Clear the current conversation and start over">
+        <i class="bi bi-plus-lg"></i> New chat
+      </button>
+      <div class="eva-sidebar-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="evaQuestionSearch" placeholder="Search questions...">
+      </div>
+      <div class="eva-sidebar-sections" id="evaSidebarSections"></div>
+      <div class="eva-sidebar-footer" id="evaSidebarFooter">
+        <div class="eva-user-menu" id="evaUserMenu">
+          <button class="eva-user-menu-item" id="evaDarkModeToggle">
+            <i class="bi bi-moon-stars"></i> <span id="evaDarkModeLabel">Dark mode</span>
+          </button>
+        </div>
+        <button class="eva-user-row" id="evaUserRow">
+          <span class="eva-user-avatar">DU</span>
+          <span class="eva-user-info">
+            <span class="eva-user-email-main">Dashboard User</span>
+            <span class="eva-user-email-sub">Signed in</span>
+          </span>
+          <i class="bi bi-chevron-up eva-user-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <button class="eva-fullscreen-close" id="evaFullscreenClose" title="Close"><i class="bi bi-x-lg"></i></button>
+  <div class="chatbox-panel" id="chatboxPanel">
+    <div class="chatbox-header">
+      <div class="chatbox-header-avatar">
+        <img src="assets/chatbotgirl.png" alt="Eva">
+      </div>
+      <div class="chatbox-header-text">
+        <div class="chatbox-header-subtitle">Hey there! I'm Eva</div>
+        <div class="chatbox-header-title">How can I help?</div>
+      </div>
+      <div class="chatbox-header-controls">
+        <button class="chatbox-ctrl-btn" id="chatboxFavourites" title="Saved Favourites" style="position:relative;" onclick="showFavouritesPanel()"><i class="bi bi-star"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClearChat" title="Clear Chat" onclick="clearChat()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxMaximize" title="Maximize"><i class="bi bi-arrows-angle-expand"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClose" title="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="chatbox-body" id="chatboxBody">
+      <div class="chat-msg" id="welcome-msg">
+        <div class="chat-msg-avatar">
+          <img src="assets/hoverchatbotgirl.png" alt="Eva">
+        </div>
+        <div class="welcome-bubble">
+          <b>Hi, how can I help you with your dashboards?</b>
+        </div>
+      </div>
+    </div>
+    <div class="chatbox-footer">
+      <div class="chatbox-input-wrap">
+        <input type="text" class="chatbox-input" id="chatboxInput" placeholder="Type your message here...">
+        <button class="chatbox-send-btn" id="chatboxSendBtn"><i class="bi bi-send-fill"></i></button>
+      </div>
+      <div class="chatbox-disclaimer">Eva can make mistakes - review information carefully.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dislike feedback modal -->
+<div class="eva-feedback-modal-overlay" id="evaFeedbackModalOverlay">
+  <div class="eva-feedback-modal">
+    <div class="eva-feedback-modal-header">
+      <div class="eva-feedback-modal-icon" id="evaFeedbackModalIcon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+      <div class="eva-feedback-modal-headtext">
+        <div class="eva-feedback-modal-title" id="evaFeedbackModalTitle">What went wrong?</div>
+        <div class="eva-feedback-modal-subtitle" id="evaFeedbackModalSubtitle">Help Eva give better answers</div>
+      </div>
+      <button class="eva-feedback-modal-close" id="evaFeedbackModalCloseBtn" title="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="eva-feedback-modal-body">
+      <div id="evaFeedbackStepSelect">
+        <div class="eva-feedback-label">Select an issue</div>
+        <div class="eva-feedback-options" id="evaFeedbackOptions">
+          <button class="eva-feedback-chip" data-issue="Wrong answer">Wrong answer</button>
+          <button class="eva-feedback-chip" data-issue="Missing information">Missing information</button>
+          <button class="eva-feedback-chip" data-issue="Didn't understand my question">Didn't understand my question</button>
+          <button class="eva-feedback-chip" data-issue="Confusing response">Confusing response</button>
+          <button class="eva-feedback-chip" data-issue="Incorrect data">Incorrect data</button>
+          <button class="eva-feedback-chip" data-issue="Something else">Something else</button>
+        </div>
+        <div class="eva-feedback-label">Additional notes <span id="evaFeedbackNotesRequired">(optional)</span></div>
+        <div class="eva-feedback-textarea-wrap">
+          <textarea id="evaFeedbackNotes" maxlength="255" placeholder="Describe the issue in more detail..."></textarea>
+          <span class="eva-feedback-char-count" id="evaFeedbackCharCount">0 / 255</span>
+        </div>
+      </div>
+      <div id="evaFeedbackStepSuccess" style="display:none;">
+        <div class="eva-feedback-success-row">
+          <div class="eva-feedback-success-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="eva-feedback-success-text">Your feedback has been noted. Eva will use it to improve the quality and accuracy of future responses.</div>
+        </div>
+      </div>
+    </div>
+    <div class="eva-feedback-modal-footer">
+      <button class="eva-feedback-send-btn" id="evaFeedbackActionBtn">Send Feedback</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/qa-attendance-scheduling.js"></script>
+<script src="assets/qa-overtime-management.js"></script>
+<script src="assets/qa-labor-cost-analysis.js"></script>
+<script src="assets/qa-payroll-exceptions.js"></script>
+<script src="assets/qa-analytics-insights.js"></script>
+<script src="assets/qa-recommendations.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/settings.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

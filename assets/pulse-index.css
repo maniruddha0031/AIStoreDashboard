@@ -1,0 +1,83 @@
+/* ============================================================
+   Pulse Index — page-specific styling. Reuses this app's existing
+   .chart-card / .severity-badge / .up-green / .up-red conventions;
+   only the pieces below (focus header, band bar, table, mini-band)
+   are new, namespaced .pi-*.
+   ============================================================ */
+.pi-wrap{ display:flex; flex-direction:column; gap:20px; width:100%; }
+.pi-focus-card{ padding-top:14px; padding-bottom:14px; border:1px solid transparent; border-left-width:5px; transition:background .15s,border-color .15s; }
+.pi-focus-card.pi-focus-good{ background:#eafbf1; border-color:#bbf7d0; border-left-color:#16a34a; }
+.pi-focus-card.pi-focus-bad{ background:#fdedee; border-color:#fecdd3; border-left-color:#dc2626; }
+
+.pi-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.pi-scope{ display:inline-flex; background:#eef1f7; border-radius:999px; padding:3px; flex-shrink:0; }
+.pi-scope span{ padding:6px 16px; border-radius:999px; font-size:12.5px; font-weight:700; cursor:pointer; color:#556; white-space:nowrap; }
+.pi-scope span:hover{ color:#1e293b; }
+.pi-scope span.on{ background:linear-gradient(120deg,#2563eb,#4f46e5); color:#fff; }
+.pi-scope-n{ font-style:normal; opacity:.7; font-size:10.5px; margin-left:3px; }
+
+/* Fixed (not min) height so the column stops growing past the screen —
+   topbar + tab row + the heading/scope row above (.pi-top) + page
+   padding account for roughly the first 260px of the viewport. The
+   table scrolls internally for whatever doesn't fit; the side tiles
+   stretch/shrink to match so all 4 stay on screen too. */
+.pi-grid{ display:grid; grid-template-columns:minmax(0,1fr) 258px; gap:16px; align-items:stretch; height:calc(100vh - 260px); min-height:420px; }
+.pi-main{ display:flex; flex-direction:column; gap:20px; min-width:0; min-height:0; }
+.pi-side{ display:flex; flex-direction:column; gap:12px; min-height:0; overflow:hidden; }
+@media(max-width:1100px){ .pi-grid{ grid-template-columns:1fr; height:auto; } .pi-main, .pi-side{ min-height:0; } }
+
+/* The table card stretches to fill whatever height .pi-main is given
+   (matching the side tiles column) instead of leaving blank space
+   below a fixed-height table. */
+.pi-table-card{ display:flex; flex-direction:column; flex:1; min-height:0; }
+
+.pi-tile{ border-radius:14px; padding:14px 16px; color:#fff; box-shadow:0 6px 18px rgba(20,28,63,.12); position:relative; overflow:hidden; flex:1; display:flex; flex-direction:column; justify-content:center; min-height:88px; }
+.pi-tile:after{ content:''; position:absolute; right:-20px; top:-20px; width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,.14); }
+.pi-tile .k{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.85); position:relative; z-index:1; }
+.pi-tile .n{ font-size:20px; font-weight:800; margin-top:3px; letter-spacing:-.3px; position:relative; z-index:1; }
+.pi-tile .s{ font-size:11px; margin-top:2px; font-weight:600; color:rgba(255,255,255,.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; position:relative; z-index:1; }
+.pi-tile.blue{ background:linear-gradient(135deg,#1d4ed8,#3b82f6); }
+.pi-tile.green{ background:linear-gradient(135deg,#0f7a41,#22b06a); }
+.pi-tile.rose{ background:linear-gradient(135deg,#c02744,#ef4f6b); }
+.pi-tile.violet{ background:linear-gradient(135deg,#6d28d9,#9560f4); }
+
+.pi-focus-top{ display:flex; align-items:center; gap:12px; }
+.pi-focus-icon{ width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.pi-focus-icon svg{ width:17px; height:17px; }
+.pi-focus-namewrap{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; min-width:0; }
+.pi-focus-label{ font-size:17px; font-weight:800; color:#0f172a; }
+.pi-focus-value{ font-size:25px; font-weight:800; color:#0f172a; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+.pi-focus-delta{ font-size:13px; font-weight:800; }
+.pi-focus-top .severity-badge{ margin-left:auto; flex-shrink:0; }
+
+.pi-focus-summary{ margin-top:8px; font-size:12.5px; color:#334155; line-height:1.5; }
+.pi-focus-summary b{ color:#0f172a; }
+
+.pi-band{ position:relative; height:20px; margin:12px 6px 16px; }
+.pi-band-track{ position:absolute; top:6px; left:0; right:0; height:7px; border-radius:999px; box-shadow:inset 0 1px 2px rgba(15,23,42,.12); }
+.pi-band-med{ position:absolute; top:1px; width:2px; height:17px; background:#0f172a; box-shadow:0 0 0 2px rgba(255,255,255,.85); transform:translateX(-50%); }
+.pi-band-medlbl{ position:absolute; top:19px; transform:translateX(-50%); font-size:10.5px; font-weight:700; color:#475569; white-space:nowrap; }
+.pi-band-you{ position:absolute; top:0; transform:translateX(-50%); }
+.pi-band-you i{ display:block; width:14px; height:14px; border-radius:50%; border:3px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,.25); margin:0 auto; }
+.pi-band-you.good i{ background:#16a34a; }
+.pi-band-you.bad i{ background:#dc2626; }
+
+.pi-table-scroll{ flex:1; min-height:280px; overflow-y:auto; overflow-x:auto; border-radius:8px; }
+.pi-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.pi-table th{ position:sticky; top:0; z-index:1; text-align:right; padding:10px 12px; font-weight:700; color:#fff; background:#1e2a4a; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+.pi-table th:first-child{ text-align:left; }
+.pi-table th:nth-child(5), .pi-table td:nth-child(5){ text-align:center; }
+.pi-table td{ padding:10px 12px; border-bottom:1px solid #f0f1f5; text-align:right; }
+.pi-table tbody tr{ cursor:pointer; transition:.12s; }
+.pi-table tbody tr:nth-child(even){ background:#f8fafc; }
+.pi-table tbody tr:hover{ background:#eef2ff; }
+.pi-table tr.pi-row-active td:first-child{ box-shadow:inset 3px 0 0 #4338ca; }
+.pi-td-name{ display:flex; align-items:center; gap:8px; font-weight:700; color:#1e293b; text-align:left !important; }
+.pi-dir{ color:#94a3b8; font-weight:600; font-size:11px; }
+
+.pi-mini{ position:relative; display:inline-block; width:150px; height:16px; vertical-align:middle; }
+.pi-mini-track{ position:absolute; top:4px; left:0; right:0; height:8px; border-radius:999px; box-shadow:inset 0 1px 2px rgba(15,23,42,.12); }
+.pi-mini-med{ position:absolute; top:1px; width:2px; height:14px; background:#334155; transform:translateX(-50%); }
+.pi-mini-dot{ position:absolute; top:2px; width:10px; height:10px; border-radius:50%; transform:translateX(-50%); border:2px solid #fff; box-shadow:0 1px 3px rgba(15,23,42,.35); }
+.pi-mini-dot.good{ background:#16a34a; }
+.pi-mini-dot.bad{ background:#dc2626; }
