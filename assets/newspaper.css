@@ -1,0 +1,296 @@
+/* ============================================================
+   Daily Brief — "Enable Newspaper" alternate design. Visual copy of
+   the newspaper-style layout from the reference mock ("zip-dashboard
+   1.html"'s renderWelcome()/.nwsp-* rules), adapted to sit INSIDE the
+   Daily Brief tab's content area rather than as a standalone
+   full-viewport page:
+     - .nwsp no longer forces height:100% / overflow:hidden per column —
+       here the surrounding dashboard content area already scrolls
+       like every other tab, so columns are left to grow with their
+       content instead of being shed to fit one screen.
+     - the page-turn animation (.nwsp.folding / nwspTurn / nwspShade) and the
+       "solo-welcome" full-chrome-collapse rules are dropped — this
+       design never replaces the topbar/sidebar/tab bar, so they don't
+       apply here.
+   Class names/colors/spacing otherwise match the reference as closely
+   as this app's data allows.
+   ============================================================ */
+.nwsp{--ink:#141a2e;--rule:#c9cfdd;--rule-hard:#141a2e;--paper:#fdfcfa;
+  width:100%;padding:18px 0 28px;background:var(--paper);
+  font-family:Georgia,'Iowan Old Style','Times New Roman',serif;color:var(--ink);
+  border-radius:10px;box-shadow:0 1px 4px rgba(15,23,42,.06);}
+
+/* ---- masthead ---- */
+.nwsp-mast{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;
+  gap:16px;padding-bottom:9px;border-bottom:3px double var(--rule-hard)}
+.nwsp-mast-l,.nwsp-mast-r{display:flex;flex-direction:column;gap:3px;font-size:10.5px;
+  letter-spacing:.04em;color:#5d6478;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-mast-r{align-items:flex-end;text-align:right}
+.nwsp-edition,.nwsp-day{text-transform:uppercase;font-weight:800;letter-spacing:.11em;font-size:9.5px;color:#8a90a4}
+.nwsp-rule{height:1px;background:var(--rule);width:100%;margin:1px 0}
+.nwsp-title{margin:0;font-size:38px;line-height:1;letter-spacing:-.02em;font-weight:700;
+  text-align:center;white-space:nowrap}
+.nwsp-scope,.nwsp-date{font-weight:600;color:#3c4358}
+
+/* ---- the banner: one sentence, given the width ---- */
+.nwsp-banner{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;
+  padding:14px 0 16px;border-bottom:1px solid var(--rule)}
+.nwsp-headline{margin:0;font-size:29px;line-height:1.16;letter-spacing:-.02em;font-weight:700;flex:1 1 420px}
+.nwsp-standfirst{margin:0;flex:1 1 260px;min-width:200px;font-size:13px;line-height:1.55;
+  color:#4a5165;font-style:italic}
+
+/* ---- read progress ---- */
+.nwsp-prog{flex:0 0 auto;margin-left:auto;display:flex;flex-direction:column;gap:4px;
+  min-width:158px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-prog-bar{height:3px;background:#e4e7ef;border-radius:2px;overflow:hidden}
+.nwsp-prog-bar span{display:block;height:100%;width:0;border-radius:2px;
+  background:linear-gradient(90deg,#3b2a86,#0b6b39);transition:width .3s ease}
+.nwsp-prog-tx{display:flex;align-items:center;gap:9px;font-size:10px;
+  color:#8a90a4;letter-spacing:.03em}
+.nwsp-prog-tx>span{font-weight:800;color:#3c4358;white-space:nowrap}
+.nwsp-prog-b{background:none;border:none;padding:0;cursor:pointer;font:inherit;
+  font-size:9.5px;font-weight:700;color:#8a90a4;text-decoration:underline;
+  text-underline-offset:2px}
+.nwsp-prog-b:hover{color:#3b2a86}
+.nwsp.all-read .nwsp-prog-tx>span{color:#0b6b39}
+.nwsp.all-read .nwsp-prog-bar span{background:#0b6b39}
+@media(max-width:1150px){ .nwsp-prog{display:none} }
+
+/* ---- "take me to dashboard" ---- */
+.nwsp-enter{flex:0 0 auto;margin-left:14px;background:var(--ink);color:#fff;border:none;
+  border-radius:2px;padding:9px 19px;cursor:pointer;font-size:12px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif;transition:background .16s}
+.nwsp-enter:hover{background:#3b2a86}
+.nwsp-enter:focus-visible{outline:2px solid #6d28d9;outline-offset:2px}
+.nwsp.all-read .nwsp-enter{background:#0b6b39}
+
+/* ---- by daypart ---- */
+.nwsp-dp{list-style:none;margin:0 0 6px;padding:0;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-dp li{display:flex;align-items:center;gap:7px;padding:4px 0;
+  border-bottom:1px solid #eef0f5;font-size:10.5px;font-variant-numeric:tabular-nums}
+.nwsp-dp-n{flex:0 0 66px;color:#3c4358;font-weight:600;white-space:nowrap}
+.nwsp-dp-n b{color:#b4560f;margin-left:3px;font-style:normal}
+.nwsp-dp-b{flex:1;min-width:0;height:6px;background:#eceef4;border-radius:1px;overflow:hidden}
+.nwsp-dp-b i{display:block;height:100%;background:#8a90a4;border-radius:1px}
+.nwsp-dp-p{flex:0 0 26px;text-align:right;color:#2c3346;font-weight:700}
+.nwsp-dp-d{flex:0 0 36px;text-align:right;font-weight:800}
+.nwsp-dp-d.good{color:#0b6b39}.nwsp-dp-d.bad{color:#b0203c}
+.nwsp-dp-f{margin:0;font-size:10px;line-height:1.4;color:#a4aabb;font-style:italic}
+
+/* ---- three columns, with rules between them ---- */
+.nwsp-body{display:grid;grid-template-columns:317px minmax(0,1fr) 300px;
+  gap:0;padding-top:16px;align-items:start}
+/* .nwsp-col-l/.nwsp-col-r keep the same padding as every other column
+   edge in this layout (their own divider side, the middle column's two
+   sides) — zeroing the outer sides left the page's leftmost/rightmost
+   text flush against the sidebar/window edge with no cushion at all,
+   reading as clipped rather than as a deliberately edge-to-edge page. */
+.nwsp-col{min-width:0;padding:0 22px}
+.nwsp-col-l{border-right:1px solid var(--rule)}
+.nwsp-col-r{border-left:1px solid var(--rule)}
+@media(max-width:1420px){
+  .nwsp-body{grid-template-columns:289px minmax(0,1fr) 272px}
+  .nwsp-col{padding:0 18px}}
+@media(max-width:1240px){
+  .nwsp-body{grid-template-columns:265px minmax(0,1fr) 248px}
+  .nwsp-col{padding:0 17px}}
+@media(max-width:1040px){
+  .nwsp-body{grid-template-columns:257px minmax(0,1fr);row-gap:24px}
+  .nwsp-col-r{display:none}}
+
+.nwsp-sech{display:flex;align-items:baseline;gap:8px;margin:0 0 9px;padding-bottom:5px;
+  border-bottom:2px solid var(--rule-hard);
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-sech span{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.11em}
+.nwsp-sech i{margin-left:auto;font-style:normal;font-size:9.5px;color:#8a90a4;
+  text-transform:uppercase;letter-spacing:.06em}
+.nwsp-sech.tight{margin-top:16px}
+.nwsp-blk:first-child .nwsp-sech.tight{margin-top:0}
+
+/* ---- the numbers ---- */
+.nwsp-quotes{list-style:none;margin:0 0 4px;padding:0;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-qr{padding:7px 0;border-bottom:1px solid #e6e9f0}
+.nwsp-qr:first-child{padding-top:0}
+.nwsp-qr-top{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.nwsp-qr-n{flex:1;min-width:0;font-size:10px;font-weight:800;color:#7c88a6;
+  text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.nwsp-qr-bot{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.nwsp-qr-v{flex:1;min-width:0;font-size:16px;font-weight:800;color:var(--ink);
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nwsp-qr-c{flex:0 0 auto;font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.nwsp-qr-c i{font-style:normal;font-size:8.5px;font-weight:600;color:#a4aabb;margin-left:2px}
+.nwsp-qr-c.good{color:#0b6b39}.nwsp-qr-c.bad{color:#b0203c}.nwsp-qr-c.flat{color:#98a0b4}
+
+/* ---- the two standing figures ---- */
+.nwsp-stat{display:block;width:100%;text-align:left;background:none;border:none;
+  border-bottom:1px solid #e6e9f0;padding:10px 0;cursor:pointer;font:inherit;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-stat:hover .nwsp-stat-l{text-decoration:underline}
+.nwsp-stat-n{display:block;font-family:Georgia,serif;font-size:30px;font-weight:700;
+  line-height:1;letter-spacing:-.02em}
+.nwsp-stat-n i{font-style:normal;font-size:12px;font-weight:600;color:#8a90a4;margin-left:5px}
+.nwsp-stat.stores .nwsp-stat-n{color:#b4560f}
+.nwsp-stat.pulse .nwsp-stat-n{color:#1a5f8a}
+.nwsp-stat-l{display:block;margin-top:2px;font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.06em;color:#3c4358}
+.nwsp-stat-d{display:block;margin-top:2px;font-size:11px;color:#6b7288;line-height:1.45}
+
+/* ---- the lead story ---- */
+.nwsp-lead{display:block;width:100%;text-align:left;background:none;border:none;
+  font:inherit;padding:0}
+.nwsp-kicker{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:9.5px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.11em;padding:3px 9px;border-radius:2px;
+  display:inline-block;margin-bottom:8px}
+.nwsp-lead.bad .nwsp-kicker{background:#fbe3e7;color:#96203a}
+.nwsp-lead.watch .nwsp-kicker{background:#fdf0da;color:#8a5409}
+.nwsp-lead.good .nwsp-kicker{background:#e2f3e9;color:#0d5c36}
+.nwsp-lead-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:7px}
+.nwsp-byline{margin-left:auto;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;
+  font-size:9.5px;color:#8a90a4;letter-spacing:.03em;font-style:italic}
+.nwsp-lead-h{margin:0 0 7px;font-size:26px;line-height:1.2;letter-spacing:-.018em;
+  font-weight:700;cursor:pointer}
+.nwsp-lead-h:hover{text-decoration:underline;text-underline-offset:3px}
+.nwsp-lead-sf{margin:0 0 10px;font-size:15px;line-height:1.45;font-weight:600;color:#232a3d;
+  padding-bottom:9px;border-bottom:1px solid var(--rule)}
+.nwsp-lead-d{margin:0 0 11px;font-size:13px;line-height:1.58;color:#3a4157}
+.nwsp-dk{display:block;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:9.5px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#8a90a4;margin-bottom:3px}
+.nwsp-lead-f{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:3px}
+
+/* the second story sits below the lead */
+.nwsp-second{margin-top:16px;padding-top:14px;border-top:2px solid var(--rule-hard)}
+.nwsp-kicker.sm{font-size:8.5px;padding:2px 7px}
+.nwsp-second-h{margin:0 0 8px;font-size:19px;line-height:1.24;font-weight:700;
+  letter-spacing:-.012em;cursor:pointer}
+.nwsp-second-h:hover{text-decoration:underline;text-underline-offset:2px}
+.nwsp-second-cols{columns:2;column-gap:22px;column-rule:1px solid var(--rule);margin-bottom:9px}
+.nwsp-second-cols p{margin:0 0 8px;font-size:12.5px;line-height:1.6;color:#3a4157;
+  break-inside:avoid}
+.nwsp-second-r{color:#2c3346}
+@media(max-width:1300px){.nwsp-second-cols{columns:1}}
+
+/* items below the two stories, two-up in a ruled grid */
+.nwsp-belows{display:grid;grid-template-columns:1fr 1fr;column-gap:24px;
+  margin-top:14px;padding-top:13px;border-top:2px solid var(--rule-hard)}
+.nwsp-below{text-align:left;background:none;border:none;cursor:pointer;font:inherit;
+  padding:0 0 11px;margin-bottom:11px;border-bottom:1px solid #e6e9f0}
+.nwsp-below.b3,.nwsp-below.b4{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.nwsp-below h4{margin:3px 0 4px;font-size:15.5px;line-height:1.28;font-weight:700;
+  letter-spacing:-.01em}
+.nwsp-below:hover h4{text-decoration:underline;text-underline-offset:2px}
+.nwsp-below p{margin:0 0 5px;font-size:12px;line-height:1.55;color:#4a5165;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.nwsp-below:nth-child(odd){padding-right:24px;border-right:1px solid var(--rule);margin-right:-1px}
+@media(max-width:1150px){
+  .nwsp-belows{grid-template-columns:1fr}
+  .nwsp-below:nth-child(odd){padding-right:0;border-right:none;margin-right:0}}
+
+/* a drop cap is the cheapest signal that something is meant to be read */
+.nwsp-lead-b{margin:0 0 11px;font-size:14px;line-height:1.62;color:#2c3346}
+.nwsp-lead-b:first-letter{float:left;font-size:44px;line-height:.86;font-weight:700;
+  padding:3px 8px 0 0;color:var(--ink)}
+.nwsp-lead-r{margin:0 0 12px;padding:11px 14px;background:#f3f1ec;border-left:3px solid var(--ink)}
+.nwsp-lead-r p{margin:0;font-size:12.5px;line-height:1.58;color:#2c3346}
+.nwsp-lead-r b{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:9.5px;
+  font-weight:800;text-transform:uppercase;letter-spacing:.09em;display:block;margin-bottom:3px;color:#5d6478}
+.nwsp-more{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:11px;font-weight:800;
+  letter-spacing:.04em;color:#3b2a86;background:none;border:none;padding:0;cursor:pointer}
+.nwsp-more:hover{text-decoration:underline;text-underline-offset:2px}
+.nwsp-more.ghost{color:#6b7288;font-weight:700}
+.nwsp-more.sm{font-size:10px}
+
+/* ---- the shorter items ---- */
+.nwsp-brief{display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  font:inherit;padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid #e6e9f0}
+.nwsp-brief:last-of-type{border-bottom:none}
+.nwsp-b-k{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:8.5px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.1em;color:#8a90a4}
+.nwsp-brief.bad .nwsp-b-k{color:#96203a}
+.nwsp-brief.watch .nwsp-b-k{color:#8a5409}
+.nwsp-brief.good .nwsp-b-k{color:#0d5c36}
+.nwsp-brief h3{margin:3px 0 4px;font-size:14.5px;line-height:1.28;font-weight:700;letter-spacing:-.01em}
+.nwsp-brief:hover h3{text-decoration:underline;text-underline-offset:2px}
+.nwsp-brief p{margin:0 0 5px;font-size:12px;line-height:1.5;color:#5a6178}
+.nwsp-none{font-size:12.5px;color:#8a90a4;font-style:italic;padding:8px 0}
+.nwsp-col-r .nwsp-brief{padding-bottom:9px;margin-bottom:9px}
+.nwsp-col-r .nwsp-brief h3{font-size:13.5px}
+.nwsp-col-r .nwsp-brief p{font-size:11.5px;line-height:1.45;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+
+.nwsp-shorts{list-style:none;margin:0 0 4px;padding:0}
+.nwsp-shorts li{display:flex;align-items:baseline;gap:7px;padding:5px 0;cursor:pointer;
+  border-bottom:1px solid #e6e9f0;font-size:12px;line-height:1.38;color:#2c3346;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.nwsp-shorts li:hover{color:#3b2a86;text-decoration:underline;text-underline-offset:2px}
+.nwsp-s-d{flex:0 0 5px;width:5px;height:5px;border-radius:50%;margin-top:5px;background:#98a0b4}
+.nwsp-shorts li.bad .nwsp-s-d{background:#b0203c}
+.nwsp-shorts li.watch .nwsp-s-d{background:#d08a12}
+.nwsp-shorts li.good .nwsp-s-d{background:#0b6b39}
+
+.nwsp-mov{width:100%;table-layout:fixed;border-collapse:collapse;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-mov td{padding:4px 0;border-bottom:1px solid #eef0f5;font-size:10.5px;
+  font-variant-numeric:tabular-nums}
+.nwsp-m-n{color:#3c4358;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nwsp-m-v{width:74px;text-align:right;color:#5a6178}
+.nwsp-m-d{width:52px;text-align:right;font-weight:800}
+.nwsp-m-d.good{color:#0b6b39}.nwsp-m-d.bad{color:#b0203c}
+.nwsp-m-gap td{border-bottom:2px solid var(--rule-hard);padding:0;height:3px}
+.nwsp-mov tr[onclick]{cursor:pointer}
+.nwsp-mov tr[onclick]:hover .nwsp-m-n{color:#3b2a86}
+
+.nwsp-tomorrow{margin:0;font-size:11.5px;line-height:1.5;color:#5a6178;font-style:italic}
+
+/* ---- the left column's lower matter ---- */
+.nwsp-reg{width:100%;table-layout:fixed;border-collapse:collapse;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-reg tr{cursor:pointer}
+.nwsp-reg tr:hover .nwsp-r-n{color:#3b2a86}
+.nwsp-reg td{padding:5px 0;border-bottom:1px solid #eef0f5;font-size:10.5px;
+  font-variant-numeric:tabular-nums;vertical-align:middle}
+.nwsp-r-n{width:62px;color:#3c4358;font-weight:700;white-space:nowrap}
+.nwsp-r-n i{font-style:normal;color:#a4aabb;font-weight:600;margin-left:4px}
+.nwsp-r-b{padding:0 7px!important}
+.nwsp-r-b span{display:block;height:6px;border-radius:1px;
+  background:linear-gradient(90deg,#3b2a86,#7b6bd6)}
+.nwsp-r-v{width:66px;text-align:right;color:#2c3346;font-weight:600}
+.nwsp-r-d{width:42px;text-align:right;font-weight:800}
+.nwsp-r-d.good{color:#0b6b39}.nwsp-r-d.bad{color:#b0203c}
+
+/* the week as a bar strip, today marked */
+.nwsp-strip{display:flex;align-items:flex-end;gap:5px;height:56px;margin-bottom:5px}
+.nwsp-st{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+  height:100%;gap:3px}
+.nwsp-st-b{width:100%;border-radius:1px;min-height:3px}
+.nwsp-st.past .nwsp-st-b{background:linear-gradient(180deg,#3b2a86,#7b6bd6)}
+.nwsp-st.ahead .nwsp-st-b{background:repeating-linear-gradient(135deg,#e6e9f0,#e6e9f0 2px,transparent 2px,transparent 4px);
+  box-shadow:inset 0 0 0 1px #dfe3ec}
+.nwsp-st.today .nwsp-st-b{background:linear-gradient(180deg,#b4560f,#e0812b)}
+.nwsp-st-n{font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:8.5px;font-weight:700;
+  color:#8a90a4;letter-spacing:.04em}
+.nwsp-st.today .nwsp-st-n{color:#b4560f;font-weight:800}
+
+/* notices */
+.nwsp-not{list-style:none;margin:0;padding:0;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}
+.nwsp-not li{padding:6px 0;border-bottom:1px solid #eef0f5;
+  font-size:11.5px;line-height:1.4;color:#2c3346;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.nwsp-not li a{color:inherit;text-decoration:none}
+.nwsp-not li:hover{color:#3b2a86}
+.nwsp-not-k{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;
+  border-radius:2px;padding:1px 6px;margin-right:6px;white-space:nowrap;
+  background:#efe6ff;color:#4c2896}
+
+.nwsp-blk{margin-bottom:16px}
+.nwsp-blk:last-child{margin-bottom:0}
+
+.nwsp-foot{display:flex;align-items:center;gap:12px;margin-top:18px;padding:9px 0 0;
+  border-top:3px double var(--rule-hard);font-size:10.5px;color:#8a90a4;
+  font-family:-apple-system,'Segoe UI',Roboto,sans-serif}

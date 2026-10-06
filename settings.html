@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — AI Dashboard</title>
+
+<script src="assets/zoom-sync.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/chatbot.css">
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+<!-- TOP BAR (identical chrome to the Dashboard screen) -->
+<div class="h-14 bg-[#0b2545] text-white flex items-center justify-between px-5 shrink-0">
+  <div class="flex items-center gap-6 top-text">
+    <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-sm">
+      <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+    </div>
+
+    <div class="relative">
+      <button id="myAppsBtn" onclick="toggleMenu('myAppsMenu')" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition">
+        <i data-lucide="grip" class="w-4 h-4"></i>
+        <span>My App</span>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-[#7db4f8]"></i>
+      </button>
+      <div id="myAppsMenu" data-dropdown-menu data-trigger="myAppsBtn"
+        class="hidden absolute left-0 mt-2 w-60 bg-white text-slate-700 rounded-xl shadow-xl border border-slate-100 text-[13.5px] py-2 z-[90]"></div>
+    </div>
+
+    <div class="flex items-center gap-2 opacity-90">
+      <i data-lucide="map-pin" class="w-4 h-4"></i>
+      <span>236 - Bressi Ranch</span>
+      <i data-lucide="chevron-down" class="w-4 h-4"></i>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-5 top-text">
+    <div class="flex items-center gap-2">
+      <i data-lucide="cloud" class="w-4 h-4"></i>
+      <span>75°F</span>
+    </div>
+    <div class="border-l border-blue-700 h-5"></div>
+    <div id="topClock">04:40 AM AMERICA/LOS ANGELES</div>
+
+    <div class="relative">
+      <button id="storeBtn" onclick="toggleMenu('storeMenu')" class="bg-white text-slate-700 px-4 py-1 rounded-full flex items-center gap-2">
+        <i data-lucide="building-2" class="w-4 h-4"></i>
+        Original Fish Taco, LLC
+        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+      </button>
+      <div id="storeMenu" data-dropdown-menu data-trigger="storeBtn"
+        class="hidden absolute right-0 mt-2 w-56 bg-white text-slate-700 rounded-lg shadow-lg text-[13px] z-[90]">
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">085 - Del Mar</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">086 - Santa Ana</div>
+        <div class="px-4 py-2 hover:bg-slate-100 cursor-pointer">087 - Riverside</div>
+      </div>
+    </div>
+
+    <a href="settings.html?scope=global" title="Settings" class="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 text-white rounded-full transition">
+      <i data-lucide="settings" class="w-4 h-4"></i>
+    </a>
+    <button title="My Profile" class="w-8 h-8 rounded-full bg-slate-200 hover:ring-2 hover:ring-white/60 transition flex items-center justify-center overflow-hidden">
+      <i data-lucide="user" class="w-4 h-4 text-slate-500"></i>
+    </button>
+  </div>
+</div>
+
+<div class="app-row flex flex-1 min-h-0">
+
+  <!-- SIDEBAR (3 menus only) -->
+  <div class="sidebar bg-[#0b2545] text-white flex flex-col justify-between shrink-0">
+    <div class="pt-2 w-full">
+      <a href="index.html" id="sideDashLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="layout-dashboard"></i>
+        <span class="label">Dashboard</span>
+      </a>
+      <a href="settings.html?scope=global" id="sideGlobalLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="settings"></i>
+        <span class="label">Global Setting</span>
+      </a>
+      <a href="settings.html?scope=organization" id="sideOrgLink" class="menu-item px-4 py-3 opacity-90">
+        <i data-lucide="building-2"></i>
+        <span class="label">Organization Setting</span>
+      </a>
+      <a href="org-dashboard.html" id="sideAiOrgLink" class="menu-item px-4 py-3 opacity-90 hidden">
+        <i data-lucide="presentation"></i>
+        <span class="label">Multi-Store Dashboard</span>
+      </a>
+    </div>
+    <div class="pb-4"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="app-main flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#eef2f7]">
+    <div class="flex-1 px-6 pt-4 pb-6 overflow-y-auto" id="mainContentScroll">
+
+      <!-- LIST VIEW -->
+      <div id="listView">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-[18px] font-bold text-slate-800" id="scopeTitle">Global Setting</h1>
+          <div class="flex items-center gap-3">
+            <button id="dashScheduleNavBtn" class="pill-btn hidden" style="background:#eff6ff;color:#2563eb;border:1.5px solid #bfdbfe;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" onclick="openDashScheduleList()"><i data-lucide="calendar-clock" style="width:14px;height:14px"></i>Dashboard Scheduling</button>
+            <button class="pill-btn pill-blue" onclick="openEditor(null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add Dashboard</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mb-3">
+          <div class="relative">
+            <i data-lucide="search" style="width:14px;height:14px" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="dashSearchInput" oninput="onDashSearchInput(this.value)" placeholder="Search keyword"
+              class="w-56 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+          <div class="relative">
+            <button id="dashExportBtn" onclick="toggleMenu('dashExportMenu')" class="icon-btn" title="Export" style="width:38px;height:38px;">
+              <i data-lucide="printer" style="width:16px;height:16px"></i>
+            </button>
+            <div id="dashExportMenu" data-dropdown-menu data-trigger="dashExportBtn"
+              class="hidden absolute right-0 mt-2 w-44 bg-white text-slate-700 rounded-lg shadow-lg text-[13px] z-[90] py-1">
+              <div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="exportDashboardsCsv()"><i data-lucide="file-text" style="width:14px;height:14px"></i>CSV Export</div>
+              <div class="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 cursor-pointer" onclick="exportDashboardsPdf()"><i data-lucide="file-text" style="width:14px;height:14px"></i>PDF Export</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="w-full text-[13.5px]" id="dashboardsTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Display Order</th>
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Name</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Is Active</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600 hidden" id="defaultColHead">Default Landing</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DASHBOARD SCHEDULING LIST VIEW -->
+      <div id="dashScheduleListView" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-[18px] font-bold text-slate-800">Dashboard Scheduling</h1>
+          <div class="flex items-center gap-3">
+            <button class="pill-btn pill-red" onclick="backFromDashSchedule()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-blue" onclick="openDashScheduleModal(null, null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add</button>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="w-full text-[13.5px]" id="dashScheduleTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Dashboard</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Frequency</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Time</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Start Date</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">End Date</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Status</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Action</th>
+              </tr>
+            </thead>
+            <tbody id="dashScheduleRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EDITOR VIEW -->
+      <div id="editorView" class="hidden">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div class="flex items-center gap-2">
+            <button class="editor-tab active" data-tab="general" onclick="switchEditorTab('general')">General Settings</button>
+            <button class="editor-tab" id="editorTabSections" data-tab="sections" onclick="switchEditorTab('sections')">Sections</button>
+            <button class="editor-tab" id="editorTabRoles" data-tab="roles" onclick="switchEditorTab('roles')">Roles</button>
+            <button class="editor-tab" data-tab="applications" onclick="switchEditorTab('applications')">Applications</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="pill-btn pill-red" onclick="backToList()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-green" onclick="saveEditor()"><i data-lucide="save" style="width:14px;height:14px"></i>Save</button>
+            <button id="copyDashBtn" class="pill-btn pill-blue" onclick="copyDashboard()"><i data-lucide="copy" style="width:14px;height:14px"></i>Copy Dashboard</button>
+          </div>
+        </div>
+
+        <div class="card p-6" id="editorBody"></div>
+      </div>
+
+      <!-- KPI SETTINGS VIEW -->
+      <div id="kpiSettingsView" class="hidden" style="height:100%;display:flex;flex-direction:column;">
+        <div class="flex items-center justify-between mb-4 shrink-0">
+          <h1 class="text-[18px] font-bold text-slate-800">KPI Settings</h1>
+          <button class="pill-btn pill-red" onclick="location.href='settings.html?section=aidashboardsettings'"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+        </div>
+        <div class="flex items-center justify-between gap-3 mb-3 flex-wrap shrink-0">
+          <div class="relative">
+            <i data-lucide="search" style="width:14px;height:14px" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="kpiSearchInput" oninput="onKpiSearchInput(this.value)" placeholder="Search KPI or module"
+              class="w-64 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+          <select id="kpiModuleFilter" onchange="onKpiModuleFilterChange(this.value)"
+            class="border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="">All Modules</option>
+          </select>
+        </div>
+        <div class="card" style="flex:1;min-height:0;overflow:auto;">
+          <table class="w-full text-[13.5px]" id="kpiSettingsTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600" style="position:sticky;top:0;z-index:1;background:#f1f5f9;">Module</th>
+                <th class="text-left px-5 py-3 font-bold text-slate-600" style="position:sticky;top:0;z-index:1;background:#f1f5f9;">KPI</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600" style="position:sticky;top:0;z-index:1;background:#f1f5f9;">Unit</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600" style="position:sticky;top:0;z-index:1;background:#f1f5f9;">Direction</th>
+              </tr>
+            </thead>
+            <tbody id="kpiSettingsRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KPI FAMILY LIST VIEW -->
+      <div id="kpiFamilyListView" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-[18px] font-bold text-slate-800">KPI Family</h1>
+          <div class="flex items-center gap-3">
+            <button class="pill-btn pill-red" onclick="location.href='settings.html?section=aidashboardsettings'"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-blue" onclick="openKpiFamilyEditor(null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add Family</button>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="w-full text-[13.5px]" id="kpiFamilyTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Family Name</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">No. of KPIs</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Data Types</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="kpiFamilyRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KPI FAMILY EDITOR VIEW -->
+      <div id="kpiFamilyEditorView" class="hidden">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <input type="text" id="kpiFamilyNameInput" placeholder="Family name"
+              class="border border-slate-300 rounded-lg px-3 py-2 text-[14px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400" style="width:280px;">
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="pill-btn pill-red" onclick="backToKpiFamilyList()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-green" onclick="saveKpiFamilyEditor()"><i data-lucide="save" style="width:14px;height:14px"></i>Save</button>
+          </div>
+        </div>
+        <div class="card p-6">
+          <div class="text-[13px] text-slate-500 mb-3">Pick every KPI that belongs to this family. If the picked KPIs span more than one data type ($, %, number), the KPI trend popup's Add Metric overlay renders a 2-axis chart automatically.</div>
+          <div id="kpiFamilyMemberPicker"></div>
+        </div>
+      </div>
+
+      <!-- CUSTOM KPI LIST VIEW -->
+      <div id="customKpiListView" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+          <h1 class="text-[18px] font-bold text-slate-800">Custom KPI</h1>
+          <div class="flex items-center gap-3">
+            <button class="pill-btn pill-red" onclick="location.href='settings.html?section=aidashboardsettings'"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+            <button class="pill-btn pill-blue" onclick="openCustomKpiModal(null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 mb-3">
+          <div class="relative">
+            <i data-lucide="search" style="width:14px;height:14px" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="customKpiSearchInput" oninput="onCustomKpiSearchInput(this.value)" placeholder="Search custom KPI"
+              class="w-64 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table class="w-full text-[13.5px]" id="customKpiTable">
+            <thead>
+              <tr class="bg-slate-100">
+                <th class="text-left px-5 py-3 font-bold text-slate-600">KPI Name</th>
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Module</th>
+                <th class="text-left px-5 py-3 font-bold text-slate-600">Formula</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Unit</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Direction</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Status</th>
+                <th class="text-center px-5 py-3 font-bold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customKpiRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MANAGE ACCOUNT VIEW -->
+      <div id="manageAccountView" class="hidden acct-page">
+        <h1 class="text-[18px] font-bold text-slate-800 mb-6">Manage Account</h1>
+        <div class="acct-grid">
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#fdecd8;"><i data-lucide="building-2" style="color:#d97706"></i></div>
+            <div class="acct-card-label">My Organization</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#fef9c3;"><i data-lucide="map-pin" style="color:#ca8a04"></i></div>
+            <div class="acct-card-label">Sites</div>
+          </div>
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=appsettings'">
+            <div class="acct-card-icon" style="background:#e9edfb;"><i data-lucide="layout-grid" style="color:#4f46e5"></i></div>
+            <div class="acct-card-label">App Settings</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#d9f2e3;"><i data-lucide="receipt" style="color:#16a34a"></i></div>
+            <div class="acct-card-label">Billing &amp; Subscription</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#efe4fb;"><i data-lucide="user-cog" style="color:#9333ea"></i></div>
+            <div class="acct-card-label">Profile Settings</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#dbe7fb;"><i data-lucide="building" style="color:#2563eb"></i></div>
+            <div class="acct-card-label">Franchise Groups</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#dbe7fb;"><i data-lucide="users" style="color:#2563eb"></i></div>
+            <div class="acct-card-label">Admin Users</div>
+          </div>
+          <div class="acct-card">
+            <div class="acct-card-icon" style="background:#dbe7fb;"><i data-lucide="file-search" style="color:#2563eb"></i></div>
+            <div class="acct-card-label">Audit Logs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APP SETTINGS VIEW -->
+      <div id="appSettingsView" class="hidden">
+        <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><span>App Settings</span></div>
+        <h1 class="text-[18px] font-bold text-slate-800 mb-6">App Settings</h1>
+        <div class="acct-grid" id="appSettingsGrid"></div>
+      </div>
+
+      <!-- AI DASHBOARD SETTINGS VIEW -->
+      <div id="aiDashboardSettingsView" class="hidden acct-page">
+        <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><a href="settings.html?section=appsettings">App Settings</a><i data-lucide="chevron-right"></i><span>AI Dashboard</span></div>
+        <h1 class="text-[18px] font-bold text-slate-800 mb-6">AI Dashboard</h1>
+        <div class="acct-grid">
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=kpifamily'">
+            <div class="acct-card-icon" style="background:#e9edfb;"><i data-lucide="layers" style="color:#4f46e5"></i></div>
+            <div class="acct-card-label">KPI Family</div>
+          </div>
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=kpisettings'">
+            <div class="acct-card-icon" style="background:#dbf3f5;"><i data-lucide="gauge" style="color:#0891b2"></i></div>
+            <div class="acct-card-label">KPI Settings</div>
+          </div>
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=customkpi'">
+            <div class="acct-card-icon" style="background:#efe4fb;"><i data-lucide="calculator" style="color:#9333ea"></i></div>
+            <div class="acct-card-label">Custom KPI</div>
+          </div>
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?scope=organization&opendashschedule=1'">
+            <div class="acct-card-icon" style="background:#fdecd8;"><i data-lucide="calendar-clock" style="color:#d97706"></i></div>
+            <div class="acct-card-label">Dashboard Scheduling</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- KPI ADVANCED INSIGHT (fullscreen) -->
+<div id="kpiInsightView" class="hidden" style="position:fixed;inset:0;z-index:250;background:#eef2f7;overflow-y:auto;">
+  <div class="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200" style="position:sticky;top:0;z-index:2;">
+    <div class="flex items-center gap-3">
+      <button class="icon-btn" onclick="closeKpiInsight()" title="Back" style="width:36px;height:36px;">
+        <i data-lucide="arrow-left" style="width:16px;height:16px"></i>
+      </button>
+      <div>
+        <div class="text-[17px] font-bold text-slate-800" id="kpiInsightTitle">KPI</div>
+        <div class="text-[12px] text-slate-500" id="kpiInsightSub">Advanced Insight</div>
+      </div>
+    </div>
+    <div id="kpiInsightDirBadge"></div>
+  </div>
+  <div class="p-6" id="kpiInsightBody"></div>
+</div>
+
+<!-- DASHBOARD SCHEDULING MODAL -->
+<div id="dashScheduleModal" class="hidden modal-overlay" onclick="if(event.target===this) closeDashScheduleModal()">
+  <div class="modal-box p-7" style="width:min(1120px,97vw); max-height:92vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2">
+        <i data-lucide="calendar-clock" class="w-5 h-5" style="color:#2563eb"></i>
+        <h2 class="text-[18px] font-extrabold text-slate-800" id="dashScheduleModalTitle">Schedule Dashboard</h2>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</span>
+          <button type="button" class="toggle on" id="schedActiveToggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <button onclick="closeDashScheduleModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="mb-5 bg-blue-50 border border-blue-100 px-4 py-3 rounded-lg">
+      <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Selected Dashboard <span class="text-red-500">*</span></label>
+      <select id="schedDashboardSelect" onchange="onScheduleDashboardChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"></select>
+    </div>
+
+    <div class="grid gap-5" style="grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;">
+      <!-- 1. SCHEDULING TYPE -->
+      <div class="card p-4" style="box-shadow:none;border:1px solid #eef1f5;">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b-2 border-blue-500">
+          <span class="text-blue-600 font-extrabold text-[13px]">1.</span>
+          <span class="text-blue-600 font-bold text-[11.5px] uppercase tracking-wide">Scheduling Type</span>
+        </div>
+
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Scheduling Mode <span class="text-red-500">*</span></label>
+        <div class="flex flex-col gap-2 mb-4">
+          <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-slate-200 p-2.5 rounded-lg hover:border-blue-400">
+            <input type="radio" name="schedMode" value="self" checked onchange="onScheduleModeChange()"> <span class="text-[13px] font-medium text-slate-700">Self Scheduling</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer bg-slate-50 border border-slate-200 p-2.5 rounded-lg hover:border-blue-400">
+            <input type="radio" name="schedMode" value="role" onchange="onScheduleModeChange()"> <span class="text-[13px] font-medium text-slate-700">Role-Based Scheduling</span>
+          </label>
+        </div>
+
+        <div class="mb-4 relative">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Franchise / Store <span class="text-red-500">*</span></label>
+          <div id="schedStoreTrigger" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white cursor-pointer flex justify-between items-center hover:border-blue-400" style="min-width:0;" onclick="document.getElementById('schedStoreDropdown').classList.toggle('hidden')">
+            <span id="schedStoreSelectedText" class="truncate text-slate-500" style="min-width:0;" title="None selected">None selected</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px" class="text-slate-400 shrink-0"></i>
+          </div>
+          <div id="schedStoreDropdown" data-dropdown-menu data-trigger="schedStoreTrigger" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-[220px] overflow-y-auto">
+            <label class="flex items-center gap-2 px-3 py-2 border-b border-slate-100 font-bold text-[12.5px] cursor-pointer hover:bg-slate-50">
+              <input type="checkbox" id="schedStoreSelectAll" onchange="toggleAllScheduleStores(this.checked)"> <span id="schedStoreAllLabel">Corporate</span>
+            </label>
+            <div id="schedStoreList" class="py-1"></div>
+          </div>
+        </div>
+
+        <div id="schedSelfBlock">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Your Email <span class="text-red-500">*</span></label>
+          <input type="email" id="schedSelfEmail" disabled title="Picked up from your account automatically" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-slate-100 text-slate-500 cursor-not-allowed">
+        </div>
+
+        <div id="schedRoleBlock" class="hidden">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">User Role <span class="text-red-500">*</span></label>
+          <div class="relative mb-3">
+            <div id="schedRoleTrigger" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white cursor-pointer flex justify-between items-center hover:border-blue-400" onclick="document.getElementById('schedRoleDropdown').classList.toggle('hidden')">
+              <span id="schedRoleSelectedText" class="truncate text-slate-500">Select role(s)...</span>
+              <i data-lucide="chevron-down" style="width:14px;height:14px" class="text-slate-400 shrink-0"></i>
+            </div>
+            <div id="schedRoleDropdown" data-dropdown-menu data-trigger="schedRoleTrigger" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-[220px] overflow-y-auto py-1"></div>
+          </div>
+          <div id="schedEmailCountTile" class="hidden bg-blue-50 border border-blue-100 px-3 py-2.5 rounded-lg">
+            <label class="block text-[10.5px] font-bold text-slate-500 uppercase tracking-wider">Email Id Count</label>
+            <span id="schedEmailCountText" class="text-[13px] font-bold text-blue-600"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. SCHEDULE TIMING -->
+      <div class="card p-4" style="box-shadow:none;border:1px solid #eef1f5;">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b-2 border-blue-500">
+          <span class="text-blue-600 font-extrabold text-[13px]">2.</span>
+          <span class="text-blue-600 font-bold text-[11.5px] uppercase tracking-wide">Schedule Timing</span>
+        </div>
+
+        <div class="grid gap-3 mb-3" style="grid-template-columns:1fr 1fr;">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Start Date <span class="text-red-500">*</span></label>
+            <input type="date" id="schedStartDate" class="w-full border border-slate-300 rounded-lg px-2 py-2 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Trigger Time (EST) <span class="text-red-500">*</span></label>
+            <input type="time" id="schedTime" class="w-full border border-slate-300 rounded-lg px-2 py-2 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+          </div>
+        </div>
+
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Repeat</label>
+        <div class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] mb-3 bg-slate-100 text-slate-500 flex items-center justify-between" title="All dashboards currently report on a daily basis">
+          <span>Daily</span>
+          <i data-lucide="lock" style="width:12px;height:12px" class="text-slate-400"></i>
+        </div>
+        <input type="hidden" id="schedFrequency" value="Daily">
+
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
+          <div id="schedDailyOpts" class="hidden space-y-2.5 text-[13px] text-slate-700">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="schedDailyMode" value="everyDay" checked> Every day</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="schedDailyMode" value="everyWeekday"> Every weekday</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="schedDailyMode" value="everyN"> Every <input type="number" id="schedDailyN" min="2" value="2" class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center"> days</label>
+          </div>
+          <div id="schedWeeklyOpts" class="space-y-3 text-[13px] text-slate-700">
+            <label class="flex items-center gap-2 flex-wrap cursor-pointer">
+              <input type="radio" name="schedWeeklyMode" value="single" checked> Every
+              <select id="schedWeeklyDay" class="border border-slate-300 rounded px-2 py-1 text-[12.5px]">
+                <option>Sunday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                <option>Thursday</option><option>Friday</option><option>Saturday</option>
+              </select>
+            </label>
+            <div>
+              <label class="flex items-center gap-2 flex-wrap cursor-pointer mb-2">
+                <input type="radio" name="schedWeeklyMode" value="everyN"> Every <input type="number" id="schedWeeklyN" min="2" value="2" class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center"> week(s) on
+              </label>
+              <div class="flex flex-wrap gap-x-3 gap-y-1.5 pl-6">
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Sun"> Sun</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Mon"> Mon</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Tue"> Tue</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Wed"> Wed</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Thu"> Thu</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Fri"> Fri</label>
+                <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sched-weekly-daycb" value="Sat"> Sat</label>
+              </div>
+            </div>
+          </div>
+          <div id="schedMonthlyOpts" class="hidden space-y-3 text-[13px] text-slate-700">
+            <label class="flex items-center gap-2 flex-wrap cursor-pointer">
+              <input type="radio" name="schedMonthlyMode" value="dayOfMonth" checked>
+              Day <input type="number" id="schedMonthlyDay" min="1" max="28" value="1" class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center">
+              of every <input type="number" id="schedMonthlyMonths1" min="1" value="1" class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center"> month(s)
+            </label>
+            <div>
+              <label class="flex items-center gap-2 flex-wrap cursor-pointer mb-2">
+                <input type="radio" name="schedMonthlyMode" value="nthWeekday">
+                The
+                <select id="schedMonthlyNth" class="border border-slate-300 rounded px-2 py-1 text-[12.5px]">
+                  <option value="first">first</option><option value="second">second</option><option value="third">third</option>
+                  <option value="fourth">fourth</option><option value="last">last</option>
+                </select>
+                <select id="schedMonthlyWeekdayType" class="border border-slate-300 rounded px-2 py-1 text-[12.5px]">
+                  <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option>
+                  <option>Friday</option><option>Saturday</option><option>Sunday</option><option>Day</option>
+                  <option>Weekday</option><option>Weekend day</option>
+                </select>
+                of every
+              </label>
+              <div class="pl-6"><input type="number" id="schedMonthlyMonths2" min="1" value="1" class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center"> month(s)</div>
+            </div>
+          </div>
+        </div>
+
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">End <span class="text-red-500">*</span></label>
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2.5 text-[13px] text-slate-700">
+          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="schedEndType" value="noEnd" checked onchange="onScheduleEndTypeChange()"> No end date</label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="schedEndType" value="endAfter" onchange="onScheduleEndTypeChange()"> End after
+            <input type="number" id="schedEndOccurrences" min="1" value="1" disabled class="w-14 border border-slate-300 rounded px-1 py-0.5 text-center disabled:bg-slate-100 disabled:text-slate-400"> occurrence(s)
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer flex-wrap">
+            <input type="radio" name="schedEndType" value="endBy" onchange="onScheduleEndTypeChange()"> End by
+            <input type="date" id="schedEndDate" disabled class="border border-slate-300 rounded-lg px-2 py-1 text-[12.5px] disabled:bg-slate-100 disabled:text-slate-400">
+          </label>
+        </div>
+      </div>
+
+      <!-- 3. CONTENT -->
+      <div class="card p-4" style="box-shadow:none;border:1px solid #eef1f5;">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b-2 border-blue-500">
+          <span class="text-blue-600 font-extrabold text-[13px]">3.</span>
+          <span class="text-blue-600 font-bold text-[11.5px] uppercase tracking-wide">Content</span>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Subject <span class="text-red-500">*</span></label>
+          <input type="text" id="schedSubject" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Body</label>
+          <div id="schedEmailBody" contenteditable="true" class="border border-slate-300 rounded-lg p-3 text-[13px] text-slate-700 min-h-[130px] focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 mt-6">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeDashScheduleModal()">Cancel</button>
+      <button class="pill-btn pill-blue" onclick="saveDashSchedule()"><i data-lucide="check" style="width:14px;height:14px"></i>Save Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM KPI MODAL -->
+<div id="customKpiModal" class="hidden modal-overlay" onclick="if(event.target===this) closeCustomKpiModal()">
+  <div class="modal-box p-7" style="width:min(880px,96vw); max-height:92vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex items-center gap-2">
+        <i data-lucide="calculator" class="w-5 h-5" style="color:#2563eb"></i>
+        <h2 class="text-[18px] font-extrabold text-slate-800" id="customKpiModalTitle">Add Custom KPI</h2>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status</span>
+          <button type="button" class="toggle on" id="customKpiActiveToggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <button onclick="closeCustomKpiModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid gap-5" style="grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;">
+      <!-- 1. KPI INFORMATION -->
+      <div class="card p-4" style="box-shadow:none;border:1px solid #eef1f5;">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b-2 border-blue-500">
+          <span class="text-blue-600 font-extrabold text-[13px]">1.</span>
+          <span class="text-blue-600 font-bold text-[11.5px] uppercase tracking-wide">KPI Information</span>
+        </div>
+        <div class="mb-3">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">KPI Name <span class="text-red-500">*</span></label>
+          <input type="text" id="customKpiNameInput" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="e.g. Labor Cost per Sale">
+        </div>
+        <div class="mb-3">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Module <span class="text-red-500">*</span></label>
+          <select id="customKpiModuleSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400"></select>
+        </div>
+        <div class="mb-3">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Result Unit <span class="text-red-500">*</span></label>
+          <select id="customKpiUnitSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="%">Percent (%)</option>
+            <option value="$">Dollar ($)</option>
+            <option value="">Number (#)</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Direction</label>
+          <select id="customKpiDirectionSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="lower">Lower is Better</option>
+            <option value="higher">Higher is Better</option>
+            <option value="zero">Closer to Zero is Better</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notes</label>
+          <textarea id="customKpiNotesInput" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400" style="min-height:76px;" placeholder="Add a short note..."></textarea>
+        </div>
+      </div>
+
+      <!-- 2. FORMULA CONFIGURATION -->
+      <div class="card p-4" style="box-shadow:none;border:1px solid #eef1f5;">
+        <div class="flex items-center gap-1.5 mb-3 pb-2 border-b-2 border-blue-500">
+          <span class="text-blue-600 font-extrabold text-[13px]">2.</span>
+          <span class="text-blue-600 font-bold text-[11.5px] uppercase tracking-wide">Formula Configuration</span>
+        </div>
+
+        <div class="mb-3 relative">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">X (KPI) <span class="text-red-500">*</span></label>
+          <div id="customKpiXTrigger" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white cursor-pointer flex justify-between items-center hover:border-blue-400" style="min-width:0;" onclick="document.getElementById('customKpiXDropdown').classList.toggle('hidden')">
+            <span id="customKpiXText" class="truncate text-slate-500">Select KPI...</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px" class="text-slate-400 shrink-0"></i>
+          </div>
+          <div id="customKpiXDropdown" data-dropdown-menu data-trigger="customKpiXTrigger" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-[260px] overflow-hidden flex flex-col">
+            <div class="p-2 shrink-0 bg-slate-50 border-b border-slate-200">
+              <input type="text" oninput="filterCustomKpiVarList('customKpiXList', this.value)" placeholder="Search KPI..." class="w-full border border-slate-300 rounded-lg text-[12.5px] py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div id="customKpiXList" class="p-1 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div class="mb-3 relative">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Formula <span class="text-red-500">*</span></label>
+          <div id="customKpiFormulaTrigger" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white cursor-pointer flex justify-between items-center hover:border-blue-400" style="min-width:0;" onclick="document.getElementById('customKpiFormulaDropdown').classList.toggle('hidden')">
+            <span id="customKpiFormulaText" class="truncate text-slate-500">Select formula type...</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px" class="text-slate-400 shrink-0"></i>
+          </div>
+          <div id="customKpiFormulaDropdown" data-dropdown-menu data-trigger="customKpiFormulaTrigger" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-[260px] overflow-y-auto"></div>
+        </div>
+
+        <div class="mb-3 relative">
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Y (KPI) <span class="text-red-500">*</span></label>
+          <div id="customKpiYTrigger" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-[13px] bg-white cursor-pointer flex justify-between items-center hover:border-blue-400" style="min-width:0;" onclick="document.getElementById('customKpiYDropdown').classList.toggle('hidden')">
+            <span id="customKpiYText" class="truncate text-slate-500">Select KPI...</span>
+            <i data-lucide="chevron-down" style="width:14px;height:14px" class="text-slate-400 shrink-0"></i>
+          </div>
+          <div id="customKpiYDropdown" data-dropdown-menu data-trigger="customKpiYTrigger" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-[260px] overflow-hidden flex flex-col">
+            <div class="p-2 shrink-0 bg-slate-50 border-b border-slate-200">
+              <input type="text" oninput="filterCustomKpiVarList('customKpiYList', this.value)" placeholder="Search KPI..." class="w-full border border-slate-300 rounded-lg text-[12.5px] py-1.5 px-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div id="customKpiYList" class="p-1 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <div id="customKpiPreviewBox" class="bg-blue-50 border border-blue-100 px-3 py-2.5 rounded-lg text-[12.5px] text-slate-600">
+          <span class="font-bold text-slate-500 uppercase tracking-wider text-[10.5px]">Preview</span>
+          <div id="customKpiPreviewText" class="font-bold text-blue-700 mt-0.5">Pick X, Formula and Y to preview</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 mt-6">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeCustomKpiModal()">Cancel</button>
+      <button class="pill-btn pill-blue" onclick="saveCustomKpi()"><i data-lucide="check" style="width:14px;height:14px"></i>Save KPI</button>
+    </div>
+  </div>
+</div>
+
+<!-- SELECT COMPONENT MODAL -->
+<div id="componentModal" class="hidden modal-overlay" onclick="if(event.target===this) closeComponentModal()">
+  <div class="modal-box p-7" style="width:min(760px,92vw); max-height:86vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-2xl font-extrabold text-slate-800">Select Component</h2>
+      <button onclick="closeComponentModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="text-slate-500 text-[13.5px] mb-5">Choose a visual module to add to your layout</div>
+    <div class="grid gap-3" style="grid-template-columns:repeat(2,1fr);" id="componentModalGrid"></div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="deleteConfirmModal" class="hidden modal-overlay" onclick="if(event.target===this) closeDeleteConfirm()">
+  <div class="modal-box p-7" style="width:min(420px,92vw); text-align:center;">
+    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="trash-2" class="w-6 h-6 text-red-500"></i>
+    </div>
+    <div class="text-[15px] text-slate-600 mb-1">Are you sure you want to delete this Dashboard?</div>
+    <div class="text-[17px] font-bold text-slate-900 mb-6" id="deleteConfirmName"></div>
+    <div class="flex items-center justify-center gap-3">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeDeleteConfirm()">Cancel</button>
+      <button class="pill-btn pill-red" onclick="confirmDeleteDashboard()"><i data-lucide="trash-2" style="width:14px;height:14px"></i>Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTIONS TAB — GENERIC CONFIRM MODAL (Clear All / Replace Layout) -->
+<div id="sectionsConfirmModal" class="hidden modal-overlay" onclick="if(event.target===this) closeSectionsConfirm()">
+  <div class="modal-box p-7" style="width:min(440px,92vw); text-align:center;">
+    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="triangle-alert" class="w-6 h-6 text-red-500"></i>
+    </div>
+    <div class="text-[15px] font-bold text-slate-900 mb-1" id="sectionsConfirmTitle">Are you sure?</div>
+    <div class="text-[13px] text-slate-500 mb-6" id="sectionsConfirmBody"></div>
+    <div class="flex items-center justify-center gap-3">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeSectionsConfirm()">Cancel</button>
+      <button class="pill-btn pill-red" id="sectionsConfirmBtn" onclick="confirmSectionsAction()"><i data-lucide="check" style="width:14px;height:14px"></i>Yes, Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- GRID KPI SETTINGS MODAL (target value per KPI, for a grid module) -->
+<div id="gridKpiSettingsModal" class="hidden modal-overlay" onclick="if(event.target===this) closeGridKpiSettings()">
+  <div class="modal-box p-7" style="width:min(460px,92vw);">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="text-[18px] font-extrabold text-slate-800">KPI Settings</h2>
+        <div class="text-[13px] font-bold text-blue-600 mt-0.5" id="gridKpiSettingsSubtitle"></div>
+      </div>
+      <button onclick="closeGridKpiSettings()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="flex items-center justify-between gap-4 pb-2 mb-1 border-b-2 border-slate-200">
+      <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">KPI</div>
+      <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Target Value</div>
+    </div>
+    <div id="gridKpiSettingsRows"></div>
+    <div class="flex items-center justify-end gap-3 mt-6">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeGridKpiSettings()">Cancel</button>
+      <button class="pill-btn pill-blue" onclick="saveGridKpiSettings()"><i data-lucide="check" style="width:14px;height:14px"></i>Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD LAYOUT SUGGESTIONS MODAL -->
+<div id="layoutSuggestModal" class="hidden modal-overlay" onclick="if(event.target===this) closeLayoutSuggestModal()">
+  <div class="modal-box p-7" style="width:min(820px,92vw); max-height:86vh; overflow:auto;">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-2xl font-extrabold text-slate-800">Dashboard Layout</h2>
+      <button onclick="closeLayoutSuggestModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="text-slate-500 text-[13.5px] mb-5">Pick a suggested layout to start from — you can still add, remove or rearrange KPIs and sections afterward.</div>
+    <div class="layout-suggest-grid" id="layoutSuggestModalGrid"></div>
+  </div>
+</div>
+
+<!-- AI CHATBOT WIDGET (Eva) -->
+<div class="chatbot-widget" id="chatbotWidget">
+  <div class="chatbot-container" id="chatbotContainer" title="Ask Eva">
+    <i class="bi bi-chat-dots chatbot-bubble-icon"></i>
+    <svg class="chatbot-sparkle-badge" viewBox="0 0 24 24" fill="#FFC940">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M9 4.5a.75.75 0 0 1 .721.544l.813 2.846a3.75 3.75 0 0 0 2.576 2.576l2.846.813a.75.75 0 0 1 0 1.442l-2.846.813a3.75 3.75 0 0 0-2.576 2.576l-.813 2.846a.75.75 0 0 1-1.442 0l-.813-2.846a3.75 3.75 0 0 0-2.576-2.576l-2.846-.813a.75.75 0 0 1 0-1.442l2.846-.813A3.75 3.75 0 0 0 7.466 7.89l.813-2.846A.75.75 0 0 1 9 4.5ZM18 1.5a.75.75 0 0 1 .728.568l.258 1.036c.236.94.97 1.674 1.91 1.91l1.036.258a.75.75 0 0 1 0 1.456l-1.036.258c-.94.236-1.674.97-1.91 1.91l-.258 1.036a.75.75 0 0 1-1.456 0l-.258-1.036a2.625 2.625 0 0 0-1.91-1.91l-1.036-.258a.75.75 0 0 1 0-1.456l1.036-.258a2.625 2.625 0 0 0 1.91-1.91l.258-1.036A.75.75 0 0 1 18 1.5Z"/>
+    </svg>
+  </div>
+</div>
+
+<div class="chatbox-overlay" id="chatboxOverlay">
+  <div class="eva-sidebar collapsed" id="evaSidebar">
+    <div class="eva-sidebar-rail">
+      <button class="eva-rail-toggle" id="evaSidebarOpenBtn" title="Open sidebar">
+        <img src="assets/finalchatbotpic.png" alt="Eva" class="eva-rail-avatar">
+        <i class="bi bi-layout-sidebar eva-rail-toggle-icon"></i>
+      </button>
+      <button class="eva-rail-btn" id="evaRailNewChat" title="New chat"><i class="bi bi-plus-lg"></i></button>
+      <button class="eva-rail-btn" id="evaRailSearch" title="Search questions"><i class="bi bi-search"></i></button>
+      <button class="eva-rail-btn eva-fav-btn" id="evaRailFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+      <button class="eva-user-chip-collapsed" id="evaUserChipCollapsed" title="Eva">E</button>
+    </div>
+    <div class="eva-sidebar-expanded">
+      <div class="eva-sidebar-header">
+        <img src="assets/finalchatbotpic.png" alt="Eva">
+        <div>
+          <div class="eva-sidebar-header-text">Eva</div>
+          <div class="eva-sidebar-header-sub">AI Dashboard Assistant</div>
+        </div>
+        <button class="eva-sidebar-collapse-btn eva-fav-btn" id="evaHeaderFavourites" title="Favourite questions" style="position:relative;" onclick="showFavouritesInSidebar()"><i class="bi bi-star"></i></button>
+        <button class="eva-sidebar-collapse-btn" id="evaSidebarCollapseBtn" title="Close sidebar"><i class="bi bi-layout-sidebar"></i></button>
+      </div>
+      <button class="eva-new-chat-btn" id="evaNewChatBtn" title="Clear the current conversation and start over">
+        <i class="bi bi-plus-lg"></i> New chat
+      </button>
+      <div class="eva-sidebar-search">
+        <i class="bi bi-search"></i>
+        <input type="text" id="evaQuestionSearch" placeholder="Search questions...">
+      </div>
+      <div class="eva-sidebar-sections" id="evaSidebarSections"></div>
+      <div class="eva-sidebar-footer" id="evaSidebarFooter">
+        <div class="eva-user-menu" id="evaUserMenu">
+          <button class="eva-user-menu-item eva-dark-mode-toggle" id="evaDarkModeToggle">
+            <i class="bi bi-moon-stars"></i> <span class="eva-dark-mode-label" id="evaDarkModeLabel">Dark mode</span>
+          </button>
+        </div>
+        <button class="eva-user-row" id="evaUserRow">
+          <span class="eva-user-avatar">DU</span>
+          <span class="eva-user-info">
+            <span class="eva-user-email-main">Dashboard User</span>
+            <span class="eva-user-email-sub">Signed in</span>
+          </span>
+          <i class="bi bi-chevron-up eva-user-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="chatbox-panel" id="chatboxPanel">
+    <div class="chatbox-header">
+      <div class="chatbox-header-avatar">
+        <img src="assets/finalchatbotpic.png" alt="Eva">
+      </div>
+      <div class="chatbox-header-text">
+        <div class="chatbox-header-subtitle">Hey there! I'm Eva</div>
+        <div class="chatbox-header-title">Ask me anything about this screen</div>
+      </div>
+      <div class="chatbox-header-controls">
+        <button class="chatbox-ctrl-btn" id="chatboxFavourites" title="Saved Favourites" style="position:relative;" onclick="showFavouritesPanel()"><i class="bi bi-star"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClearChat" title="Clear Chat" onclick="clearChat()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxMaximize" title="Maximize"><i class="bi bi-arrows-angle-expand"></i></button>
+        <button class="chatbox-ctrl-btn" id="chatboxClose" title="Close"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="eva-fullscreen-header" id="evaFullscreenHeader">
+      <div class="eva-fsh-actions">
+        <button class="eva-fsh-btn" id="evaFshNewChat" title="Clear the current conversation and start over"><i class="bi bi-plus-lg"></i> New chat</button>
+        <div class="eva-fav-wrap" id="evaFavWrap">
+          <button class="eva-fsh-btn eva-fav-btn" id="evaFshFavourites" title="My Favourite" style="position:relative;"><i class="bi bi-star"></i> My Favourite</button>
+          <div class="eva-fav-popup" id="evaFavPopup">
+            <div class="eva-faq-popup-header">
+              <span>FAVOURITE QUESTIONS</span>
+              <button class="eva-faq-popup-close" id="evaFavPopupClose" title="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="eva-faq-popup-list" id="evaFavPopupList"></div>
+          </div>
+        </div>
+      </div>
+      <div class="eva-fsh-actions">
+        <div class="eva-faq-wrap" id="evaFaqWrap">
+          <button class="eva-fsh-btn eva-faq-btn" id="evaFaqBtn" title="FAQs"><i class="bi bi-question-circle"></i><span>FAQs</span></button>
+          <div class="eva-faq-popup" id="evaFaqPopup">
+            <div class="eva-faq-popup-header">
+              <span>FAQs</span>
+              <button class="eva-faq-popup-close" id="evaFaqPopupClose" title="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="eva-sidebar-search">
+              <i class="bi bi-search"></i>
+              <input type="text" id="evaFaqSearch" placeholder="Search questions...">
+            </div>
+            <div class="eva-faq-popup-list" id="evaFaqPopupList"></div>
+          </div>
+        </div>
+        <div class="eva-fsh-user" id="evaFshUser">
+          <button class="eva-fsh-avatar-btn" id="evaFshAvatarBtn" title="Account">AL</button>
+          <div class="eva-fsh-user-popover" id="evaFshUserPopover">
+            <div class="eva-fsh-user-popover-info">
+              <span class="eva-fsh-user-popover-avatar">AL</span>
+              <span class="eva-fsh-user-popover-text">
+                <span class="eva-fsh-user-popover-email">Altametrics</span>
+                <span class="eva-fsh-user-popover-sub">Signed in</span>
+              </span>
+            </div>
+            <button class="eva-fsh-user-popover-item eva-dark-mode-toggle" id="evaFshDarkModeToggle">
+              <i class="bi bi-moon-stars"></i> <span class="eva-dark-mode-label">Dark mode</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chatbox-body" id="chatboxBody">
+      <div class="chat-msg" id="welcome-msg">
+        <div class="chat-msg-avatar">
+          <img src="assets/finalchatbotpic.png" alt="Eva">
+        </div>
+        <div class="welcome-bubble">
+          <b>Hi, how can I help you with your dashboards?</b>
+        </div>
+      </div>
+    </div>
+    <div class="chatbox-footer">
+      <div class="chatbox-input-wrap">
+        <input type="text" class="chatbox-input" id="chatboxInput" placeholder="Type your message here...">
+        <button class="chatbox-mic-btn" id="chatboxMicBtn" title="Voice input"><i class="bi bi-mic-fill"></i></button>
+        <button class="chatbox-send-btn" id="chatboxSendBtn"><i class="bi bi-send-fill"></i></button>
+      </div>
+      <div class="chatbox-disclaimer">Eva can make mistakes - review information carefully.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dislike feedback modal -->
+<div class="eva-feedback-modal-overlay" id="evaFeedbackModalOverlay">
+  <div class="eva-feedback-modal">
+    <div class="eva-feedback-modal-header">
+      <div class="eva-feedback-modal-icon" id="evaFeedbackModalIcon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+      <div class="eva-feedback-modal-headtext">
+        <div class="eva-feedback-modal-title" id="evaFeedbackModalTitle">What went wrong?</div>
+        <div class="eva-feedback-modal-subtitle" id="evaFeedbackModalSubtitle">Help Eva give better answers</div>
+      </div>
+      <button class="eva-feedback-modal-close" id="evaFeedbackModalCloseBtn" title="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="eva-feedback-modal-body">
+      <div id="evaFeedbackStepSelect">
+        <div class="eva-feedback-label">Select an issue</div>
+        <div class="eva-feedback-options" id="evaFeedbackOptions">
+          <button class="eva-feedback-chip" data-issue="Wrong answer">Wrong answer</button>
+          <button class="eva-feedback-chip" data-issue="Missing information">Missing information</button>
+          <button class="eva-feedback-chip" data-issue="Didn't understand my question">Didn't understand my question</button>
+          <button class="eva-feedback-chip" data-issue="Confusing response">Confusing response</button>
+          <button class="eva-feedback-chip" data-issue="Incorrect data">Incorrect data</button>
+          <button class="eva-feedback-chip" data-issue="Something else">Something else</button>
+        </div>
+        <div class="eva-feedback-label">Additional notes <span id="evaFeedbackNotesRequired">(optional)</span></div>
+        <div class="eva-feedback-textarea-wrap">
+          <textarea id="evaFeedbackNotes" maxlength="255" placeholder="Describe the issue in more detail..."></textarea>
+          <span class="eva-feedback-char-count" id="evaFeedbackCharCount">0 / 255</span>
+        </div>
+      </div>
+      <div id="evaFeedbackStepSuccess" style="display:none;">
+        <div class="eva-feedback-success-row">
+          <div class="eva-feedback-success-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="eva-feedback-success-text">Your feedback has been noted. Eva will use it to improve the quality and accuracy of future responses.</div>
+        </div>
+      </div>
+    </div>
+    <div class="eva-feedback-modal-footer">
+      <button class="eva-feedback-send-btn" id="evaFeedbackActionBtn">Send Feedback</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/qa-attendance-scheduling.js"></script>
+<script src="assets/qa-overtime-management.js"></script>
+<script src="assets/qa-labor-cost-analysis.js"></script>
+<script src="assets/qa-payroll-exceptions.js"></script>
+<script src="assets/qa-analytics-insights.js"></script>
+<script src="assets/qa-recommendations.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/dashboard-data.js"></script>
+<script src="assets/trend-modal.js"></script>
+<script src="assets/settings.js"></script>
+<script src="assets/chatbot.js"></script>
+</body>
+</html>

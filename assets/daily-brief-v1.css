@@ -1,0 +1,147 @@
+/* ============================================================
+   Daily Brief — "Version 1" alternate design. A restyle of the SAME
+   sections/data as the Newspaper design (assets/newspaper.css) into
+   this app's own existing card language (.chart-card, the up-green/
+   up-red convention, .severity-badge) instead of the newspaper/serif
+   look — pill tags, a checkmark per reviewed signal, a highlighted
+   "top pick" card, and a financial-exposure callout on that top pick.
+   Namespaced .v1-* throughout.
+   ============================================================ */
+
+/* ---- header ---- */
+.v1-head{ display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid #e6e9f2; }
+.v1-head-title-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.v1-title{ margin:0; font-size:21px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
+.v1-edition-badge{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+  background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:999px; }
+.v1-head-meta{ margin-top:4px; font-size:12px; color:#64748b; font-weight:600; }
+.v1-meta-dot{ margin:0 7px; color:#cbd5e1; }
+.v1-head-r{ display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.v1-review-row{ display:flex; align-items:center; gap:12px; font-size:11.5px; color:#94a3b8; }
+.v1-review-tx{ font-weight:800; color:#334155; }
+.v1-linklike{ background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:11px;
+  font-weight:700; color:#94a3b8; text-decoration:underline; text-underline-offset:2px; }
+.v1-linklike:hover{ color:#4338ca; }
+.v1-enter{ background:#0f172a; color:#fff; border:none; border-radius:10px; padding:9px 18px;
+  cursor:pointer; font-size:12.5px; font-weight:700; transition:background .16s; }
+.v1-enter:hover{ background:#1e293b; }
+.v1.all-read .v1-enter{ background:#15803d; }
+.v1.all-read .v1-review-tx{ color:#15803d; }
+
+/* ---- 3-column body ---- */
+.v1-body{ display:grid; grid-template-columns:300px minmax(0,1fr) 300px; gap:20px; align-items:start; }
+.v1-col{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+@media(max-width:1240px){ .v1-body{ grid-template-columns:260px minmax(0,1fr) 260px; } }
+@media(max-width:1000px){ .v1-body{ grid-template-columns:1fr; } }
+
+/* ---- shared card header ---- */
+.v1-card-hd{ display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
+.v1-card-hd>span:first-child{ font-size:13px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:.03em; }
+.v1-card-hd-sub{ margin-left:auto; font-size:10.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.03em; }
+.v1-badge{ margin-left:auto; font-size:9.5px; font-weight:800; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; }
+.v1-badge.wtd{ background:#eef2ff; color:#4338ca; }
+
+/* ---- KPI list (the week so far) ---- */
+.v1-kpi-row{ padding:8px 0; border-bottom:1px solid #f1f4f8; }
+.v1-kpi-row:last-child{ border-bottom:none; padding-bottom:0; }
+.v1-kpi-row:first-child{ padding-top:0; }
+.v1-kpi-top{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.v1-kpi-name{ font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.03em; }
+.v1-kpi-val{ font-size:17px; font-weight:800; color:#0f172a; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+.v1-kpi-bot{ display:flex; align-items:center; justify-content:flex-start; gap:6px; margin-top:3px; }
+.v1-chip{ font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.v1-chip i{ font-style:normal; opacity:.75; margin-left:2px; }
+.v1-chip.good{ background:#dcfce7; color:#15803d; }
+.v1-chip.bad{ background:#fee2e2; color:#b91c1c; }
+
+/* ---- standing ---- */
+.v1-standing-row{ display:flex; gap:10px; }
+.v1-standing-box{ flex:1; min-width:0; text-align:left; background:#f8fafc; border:1px solid #eef1f5; border-radius:12px;
+  padding:11px 12px; cursor:pointer; font:inherit; transition:background .12s; }
+.v1-standing-box:hover{ background:#f1f5f9; }
+.v1-standing-n{ display:block; font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1; }
+.v1-standing-n i{ font-style:normal; font-size:11px; font-weight:700; color:#94a3b8; margin-left:3px; }
+.v1-standing-n.amber{ color:#b45309; }
+.v1-standing-n.blue{ color:#1d4ed8; }
+.v1-standing-l{ display:block; margin-top:5px; font-size:10.5px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.03em; color:#334155; }
+.v1-standing-d{ display:block; margin-top:2px; font-size:10.5px; color:#94a3b8; line-height:1.4; }
+
+/* ---- generic row list (stores to watch / movers / tape / region) ---- */
+.v1-row-list{ display:flex; flex-direction:column; }
+.v1-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0;
+  border-bottom:1px solid #f1f4f8; cursor:pointer; }
+.v1-row:last-child{ border-bottom:none; padding-bottom:0; }
+.v1-row:first-child{ padding-top:0; }
+.v1-row-main{ min-width:0; flex:1; }
+.v1-row-name{ font-size:12.5px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.v1-row-name i{ font-style:normal; color:#94a3b8; font-weight:600; margin-left:4px; }
+.v1-row-sub{ font-size:11px; color:#94a3b8; margin-top:1px; font-variant-numeric:tabular-nums; }
+.v1-row-plain{ font-size:12px; font-weight:700; color:#475569; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.v1-row-right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.v1-row-val{ font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.v1-row-val.good{ background:#dcfce7; color:#15803d; }
+.v1-row-val.bad{ background:#fee2e2; color:#b91c1c; }
+
+/* ---- operational signals header ---- */
+.v1-signals-hd{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.v1-signals-title{ font-size:15px; font-weight:800; color:#0f172a; }
+.v1-signals-count{ font-size:12px; font-weight:600; color:#64748b; }
+.v1-signals-sub{ margin-top:2px; font-size:11.5px; color:#94a3b8; }
+.v1-live-badge{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#15803d;
+  background:#f0fdf4; border:1px solid #dcfce7; padding:4px 11px; border-radius:999px; white-space:nowrap; }
+.v1-live-dot{ width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(34,197,94,.18); }
+
+/* ---- signal cards ---- */
+.v1-signal{ background:#fff; border:1px solid #eef1f5; border-left-width:4px; border-radius:14px;
+  padding:16px 18px; margin-top:14px; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.04); transition:box-shadow .15s; }
+.v1-signal:hover{ box-shadow:0 8px 26px rgba(0,0,0,.08); }
+.v1-signals-hd + .v1-signal{ margin-top:16px; }
+.v1-signal.sev-bad{ border-left-color:#dc2626; }
+.v1-signal.sev-watch{ border-left-color:#d97706; }
+.v1-signal.sev-good{ border-left-color:#16a34a; }
+.v1-signal.lead{ background:#fffdf5; border-color:#fde68a; border-left-color:#d97706; }
+.v1-signal-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.v1-tag{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+.v1-tag.star{ background:#fef3c7; color:#92400e; }
+.v1-tag.sev{ background:#fee2e2; color:#991b1b; }
+.v1-signal.sev-watch .v1-tag.sev{ background:#fef3c7; color:#92400e; }
+.v1-signal.sev-good .v1-tag.sev{ background:#dcfce7; color:#166534; }
+.v1-tag.topic{ background:#f1f5f9; color:#475569; }
+.v1-check{ margin-left:auto; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800; color:#cbd5e1; background:#f8fafc; border:1px solid #eef1f5; flex-shrink:0; }
+.v1-check.on{ color:#fff; background:#16a34a; border-color:#16a34a; }
+.v1-signal-h{ margin:10px 0 5px; font-size:15.5px; font-weight:800; color:#0f172a; letter-spacing:-.01em; }
+.v1-signal-b{ margin:0; font-size:12.5px; line-height:1.55; color:#475569; }
+.v1-signal-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:11px; flex-wrap:wrap; }
+.v1-exposure{ font-size:11.5px; font-weight:700; color:#b45309; display:flex; align-items:center; gap:6px; }
+.v1-exposure b{ font-weight:800; }
+.v1-exposure-dot{ width:6px; height:6px; border-radius:50%; background:#d97706; flex-shrink:0; }
+.v1-flagged{ font-size:11px; color:#94a3b8; font-style:italic; }
+.v1-open{ margin-left:auto; background:none; border:none; padding:0; cursor:pointer; font:inherit; font-size:11.5px; font-weight:800; color:#4338ca; }
+.v1-open:hover{ text-decoration:underline; text-underline-offset:2px; }
+
+/* the second story is the same shape as the lead, just not highlighted;
+   belows shrink further, two-up, dropping the body clamp to 2 lines */
+.v1-signals-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+.v1-signals-grid .v1-signal{ margin-top:0; padding:13px 15px; }
+.v1-signals-grid .v1-signal-h{ font-size:13.5px; margin:8px 0 4px; }
+.v1-signals-grid .v1-signal-b{ font-size:11.5px; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+@media(max-width:1150px){ .v1-signals-grid{ grid-template-columns:1fr; } }
+
+/* ---- week, day by day ---- */
+.v1-strip{ display:flex; align-items:flex-end; gap:6px; height:64px; margin-bottom:6px; position:relative; }
+.v1-st{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; position:relative; }
+.v1-st-val{ position:absolute; top:-18px; font-size:10px; font-weight:800; color:#b45309; white-space:nowrap; }
+.v1-st-bar{ display:block; width:100%; flex:1; display:flex; align-items:flex-end; }
+.v1-st-bar i{ display:block; width:100%; border-radius:3px; min-height:3px; background:#dbe1ee; }
+.v1-st.past .v1-st-bar i{ background:linear-gradient(180deg,#4338ca,#7c6bd6); }
+.v1-st.today .v1-st-bar i{ background:linear-gradient(180deg,#f59e0b,#d97706); }
+.v1-st-lbl{ font-size:9.5px; font-weight:700; color:#94a3b8; }
+.v1-st.today .v1-st-lbl{ color:#b45309; font-weight:800; }
+.v1-foot-note{ margin:8px 0 0; font-size:10.5px; color:#94a3b8; font-style:italic; }
+
+/* ---- page background: lighter, near-white canvas while Daily Brief is the open tab ---- */
+.app-main:has(#panel-dailydigest:not(.hidden) .v1){ background:#f8fafc; }
