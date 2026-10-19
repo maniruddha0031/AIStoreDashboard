@@ -2235,6 +2235,15 @@ body { display:flex !important; flex-direction:column !important; overflow:hidde
 .sa-tb-center{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:22px; white-space:nowrap; }
 .sa-logo{ width:36px;height:36px;border-radius:8px; display:block; flex-shrink:0; }
 .sa-rel{ position:relative; }
+.sa-dropdown.sa-qs-menu{ left:auto; right:0; width:288px; padding:12px 0 8px; font-size:13px; }
+.sa-qs-head{ padding:0 16px 8px; font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.04em; }
+.sa-qs-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 16px; color:#334155; font-weight:500; }
+.sa-qs-toggle{ position:relative; width:42px; height:23px; border-radius:999px; background:#e2e8f0; cursor:pointer; transition:.2s; flex-shrink:0; border:none; padding:0; }
+.sa-qs-toggle::after{ content:''; position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:.2s; }
+.sa-qs-toggle.on{ background:#22c55e; }
+.sa-qs-toggle.on::after{ left:21px; }
+.sa-qs-more{ display:block; margin-top:8px; padding:10px 16px 4px; border-top:1px solid #f1f5f9; color:#64748b; font-size:12.5px; text-decoration:none; }
+.sa-qs-more:hover{ color:#334155; }
 .sa-ghost-btn{ display:flex;align-items:center;gap:8px; padding:6px 12px; border-radius:8px; background:transparent; border:none; color:#fff; cursor:pointer; font-size:13.5px; font-weight:500; }
 .sa-ghost-btn:hover{ background:rgba(255,255,255,.1); }
 .sa-loc{ display:flex;align-items:center;gap:8px; opacity:.9; }
@@ -2319,9 +2328,19 @@ body { display:flex !important; flex-direction:column !important; overflow:hidde
         <div>087 - Riverside</div>
       </div>
     </div>
-    <a href="settings.html?scope=global" title="Settings" class="sa-circle-btn">
-      <i data-lucide="settings" style="width:16px;height:16px;"></i>
-    </a>
+    <div class="sa-rel">
+      <button id="quickSettingsBtn" type="button" title="Settings" class="sa-circle-btn" onclick="toggleMenu('quickSettingsMenu')">
+        <i data-lucide="settings" style="width:16px;height:16px;"></i>
+      </button>
+      <div id="quickSettingsMenu" data-dropdown-menu data-trigger="quickSettingsBtn" class="sa-dropdown sa-qs-menu hidden">
+        <div class="sa-qs-head">Assistant</div>
+        <div class="sa-qs-row">
+          <span>Enable help reminder</span>
+          <button id="qsHelpReminderToggle" type="button" class="sa-qs-toggle on" onclick="qsToggleHelpReminder()"></button>
+        </div>
+        <a href="settings.html?scope=global" class="sa-qs-more">More settings &rarr;</a>
+      </div>
+    </div>
     <button class="sa-avatar" title="My Profile">
       <i data-lucide="user" style="width:16px;height:16px;"></i>
     </button>

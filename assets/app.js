@@ -624,6 +624,25 @@ function qsSyncDailyBriefToggles(){
   if(v1Btn) v1Btn.classList.toggle('on', !!dd.dailyBriefV1);
 }
 
+/* "Enable help reminder" (top-bar settings menu) — controls the idle
+   "Stuck with something…? Ask Eva" popup (chatbot.js). Checked by
+   default: an absent key means "on". */
+const HELP_REMINDER_KEY = 'aidash_help_reminder_enabled_v1';
+function helpReminderEnabled(){
+  try{ return localStorage.getItem(HELP_REMINDER_KEY) !== '0'; }catch(e){ return true; }
+}
+function qsToggleHelpReminder(){
+  const on = !helpReminderEnabled();
+  try{ localStorage.setItem(HELP_REMINDER_KEY, on ? '1' : '0'); }catch(e){}
+  qsSyncHelpReminderToggle();
+  if(!on && typeof cbHideIdleNudge === 'function') cbHideIdleNudge();
+}
+function qsSyncHelpReminderToggle(){
+  const btn = document.getElementById('qsHelpReminderToggle');
+  if(btn) btn.classList.toggle('on', helpReminderEnabled());
+}
+document.addEventListener('DOMContentLoaded', qsSyncHelpReminderToggle);
+
 function startClock(){
   const el = document.getElementById('topClock');
   if(!el) return;

@@ -894,6 +894,7 @@ function cbNudgeSnoozedNow(){
   return Date.now() < until;
 }
 function cbShowIdleNudge(){
+  if(typeof helpReminderEnabled === 'function' && !helpReminderEnabled()){ cbResetIdleTimer(); return; }
   if(cbNudgeSnoozedNow()){ cbResetIdleTimer(); return; }
   if(chatboxOverlay && chatboxOverlay.classList.contains('open')){ cbResetIdleTimer(); return; }
   const activeTab = document.querySelector('#dashTabBar .view-tab.active');
