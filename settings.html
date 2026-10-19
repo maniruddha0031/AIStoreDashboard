@@ -20,7 +20,7 @@
 <body class="h-screen overflow-hidden flex flex-col">
 
 <!-- TOP BAR (identical chrome to the Dashboard screen) -->
-<div class="h-14 bg-[#0b2545] text-white flex items-center justify-between px-5 shrink-0">
+<div class="relative h-14 bg-[#0b2545] text-white flex items-center justify-between px-5 shrink-0">
   <div class="flex items-center gap-6 top-text">
     <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#3b82f6] to-[#2563eb] flex items-center justify-center shadow-sm">
       <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
@@ -43,14 +43,17 @@
     </div>
   </div>
 
-  <div class="flex items-center gap-5 top-text">
+  <!-- Weather + clock, centred in the bar -->
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-5 top-text pointer-events-none whitespace-nowrap">
     <div class="flex items-center gap-2">
       <i data-lucide="cloud" class="w-4 h-4"></i>
       <span>75°F</span>
     </div>
     <div class="border-l border-blue-700 h-5"></div>
     <div id="topClock">04:40 AM AMERICA/LOS ANGELES</div>
+  </div>
 
+  <div class="flex items-center gap-5 top-text">
     <div class="relative">
       <button id="storeBtn" onclick="toggleMenu('storeMenu')" class="bg-white text-slate-700 px-4 py-1 rounded-full flex items-center gap-2">
         <i data-lucide="building-2" class="w-4 h-4"></i>
