@@ -2233,7 +2233,7 @@ body { display:flex !important; flex-direction:column !important; overflow:hidde
 .sa-tb-left, .sa-tb-right{ display:flex; align-items:center; gap:22px; }
 /* weather + clock — centred in the bar */
 .sa-tb-center{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:22px; white-space:nowrap; }
-.sa-logo{ width:36px;height:36px;border-radius:8px; background:linear-gradient(135deg,#3b82f6,#2563eb); display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+.sa-logo{ width:36px;height:36px;border-radius:8px; display:block; flex-shrink:0; }
 .sa-rel{ position:relative; }
 .sa-ghost-btn{ display:flex;align-items:center;gap:8px; padding:6px 12px; border-radius:8px; background:transparent; border:none; color:#fff; cursor:pointer; font-size:13.5px; font-weight:500; }
 .sa-ghost-btn:hover{ background:rgba(255,255,255,.1); }
@@ -2284,7 +2284,7 @@ body { display:flex !important; flex-direction:column !important; overflow:hidde
 <body>
 <div class="sa-shell-topbar">
   <div class="sa-tb-left">
-    <div class="sa-logo"><i data-lucide="sparkles" style="width:20px;height:20px;color:#fff;"></i></div>
+    <img class="sa-logo" src="assets/ai-dashboard-logo.svg" alt="AI Dashboard">
     <div class="sa-rel">
       <button id="myAppsBtn" class="sa-ghost-btn" onclick="toggleMenu('myAppsMenu')">
         <i data-lucide="grip" style="width:16px;height:16px;"></i>

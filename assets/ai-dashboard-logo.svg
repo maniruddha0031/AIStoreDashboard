@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Dashboard">
+  <defs>
+    <linearGradient id="adl-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ef4f5f"/>
+      <stop offset="1" stop-color="#f79a2c"/>
+    </linearGradient>
+    <linearGradient id="adl-tall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a06bff"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="14" fill="#2c2e72"/>
+
+  <!-- monitor -->
+  <rect x="11.5" y="17" width="40" height="27" rx="4" fill="none" stroke="#fff" stroke-width="3.2"/>
+  <path d="M31.5 44v6.5M23.5 50.5h16" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+
+  <!-- donut + bars -->
+  <circle cx="21" cy="33.5" r="4.3" fill="none" stroke="url(#adl-ring)" stroke-width="3" stroke-linecap="round"
+          stroke-dasharray="20.3 6.7" transform="rotate(-60 21 33.5)"/>
+  <rect x="28.3" y="31" width="3.2" height="7.3" rx="1.6" fill="#f2564f"/>
+  <rect x="33.6" y="26" width="3.2" height="12.3" rx="1.6" fill="#f7932b"/>
+  <rect x="38.9" y="11" width="3.4" height="27.3" rx="1.7" fill="url(#adl-tall)" stroke="#2c2e72" stroke-width="1.6" paint-order="stroke"/>
+
+  <!-- sparkles -->
+  <path d="M12.5 6.5Q12.5 15 21 15Q12.5 15 12.5 23.5Q12.5 15 4 15Q12.5 15 12.5 6.5Z"
+        fill="#fcc845" stroke="#2c2e72" stroke-width="2.2" stroke-linejoin="round" paint-order="stroke"/>
+  <path d="M51.5 38Q51.5 44 57.5 44Q51.5 44 51.5 50Q51.5 44 45.5 44Q51.5 44 51.5 38Z"
+        fill="#fcc845" stroke="#2c2e72" stroke-width="2" stroke-linejoin="round" paint-order="stroke"/>
+</svg>
