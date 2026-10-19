@@ -339,7 +339,7 @@ function renderComponentPreviewFull(slot, id){
     </div>`;
   }
   if(slot.kind === 'grid'){
-    const sec = GRID_SECTION_BY_KEY[slot.key];
+    const sec = resolveGridSection(slot);
     if(sec) return renderGridSection(sec, id);
     return renderGridSection({ title:slot.label, color:slot.color||'blue', score:'--', hasScore:false, rows:[] }, id);
   }

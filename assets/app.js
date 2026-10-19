@@ -47,6 +47,8 @@ const GRID_KPI_TARGET_NOTES = {
   'inventory_control|Waste': 'Target is % of Total Food Cost, not of Waste itself',
   'cash_control|Refunds/Voids/Comps': 'Target is % of Net Sales',
   'cash_control|Cash Over/Short': 'Target is % of Sales',
+  'cash_control|Discount': 'Target is % of Net Sales',
+  'cash_control|Gross Sales': 'Scored by comparison against Gross Sales of LW (SD) — same day last week',
   'cash_control|Net Sales': 'Scored by comparison against Forecasted Sales — no % target'
 };
 function gridTargetsFor(moduleKey){

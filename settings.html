@@ -758,14 +758,18 @@
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
+    <div id="gridKpiSettingsHint" class="grid-kpi-hint hidden"></div>
     <div class="flex items-center justify-between gap-4 pb-2 mb-1 border-b-2 border-slate-200">
       <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">KPI</div>
       <div class="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">Target Value</div>
     </div>
     <div id="gridKpiSettingsRows"></div>
-    <div class="flex items-center justify-end gap-3 mt-6">
-      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeGridKpiSettings()">Cancel</button>
-      <button class="pill-btn pill-blue" onclick="saveGridKpiSettings()"><i data-lucide="check" style="width:14px;height:14px"></i>Save Settings</button>
+    <div class="flex items-center justify-between gap-3 mt-6">
+      <button id="gridKpiSettingsResetBtn" type="button" class="grid-kpi-reset hidden" onclick="resetGridKpiSettings()" title="Restore this module's default KPIs and targets"><i data-lucide="rotate-ccw"></i>Reset to default</button>
+      <div class="flex items-center gap-3 ml-auto">
+        <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeGridKpiSettings()">Cancel</button>
+        <button class="pill-btn pill-blue" onclick="saveGridKpiSettings()"><i data-lucide="check" style="width:14px;height:14px"></i>Save Settings</button>
+      </div>
     </div>
   </div>
 </div>

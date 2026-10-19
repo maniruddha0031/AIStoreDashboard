@@ -299,6 +299,52 @@ const GRID_SECTION_BY_KEY = {
   sales_risk: GRID_SECTIONS.risk[4]
 };
 
+/* ---------------- Configurable grid KPIs (Store Health's 4 modules) ----------------
+   Each of these modules always shows exactly GRID_KPI_SLOT_COUNT rows, but
+   which KPIs fill them is picked per placement in the Sections tab. The
+   choice lives on the slot itself (slot.kpis = [{label, row}], a snapshot
+   of the full CUR..SCORE row taken when it was picked); a slot without
+   `kpis` just shows the module's default rows from GRID_SECTIONS.
+
+   Options per module are a fixed, hand-picked list (GRID_KPI_OPTIONS),
+   in display order — not pulled from the KPI Family screen. */
+const GRID_KPI_SLOT_COUNT = 3;
+const GRID_KPI_CONFIGURABLE = ['labor_performance','inventory_control','payroll_management','cash_control'];
+const GRID_KPI_OPTIONS = {
+  labor_performance:  ['Scheduled Labor %','SPLH','Variance','Scheduled OT %'],
+  inventory_control:  ['Food Cost %','Variance','Waste','Ideal Usage %'],
+  payroll_management: ['Actual Labor %','SPLH','Variance','Actual OT %'],
+  cash_control:       ['Refunds/Voids/Comps','Cash Over/Short','Net Sales','Gross Sales','Discount']
+};
+// Rows for the options that aren't one of the module's default rows —
+// [label, CUR, WTD, LW (SD), LW (WTD), LW (TOT), SCORE].
+const GRID_KPI_EXTRA_ROWS = {
+  labor_performance:  [ ['Scheduled OT %','2.41%','3.12%','1.98%','2.86%','2.70%','84.10%'] ],
+  inventory_control:  [ ['Ideal Usage %','27.80%','28.35%','27.60%','28.10%','28.20%','91.40%'] ],
+  payroll_management: [ ['Actual OT %','1.95%','3.43%','1.72%','2.98%','3.10%','80.60%'] ],
+  cash_control: [
+    ['Gross Sales','$9,214.60','$30,118.42','$7,902.15','$1,268.30','$2,401.88','100%'],
+    ['Discount','$287.40','$1,046.75','$241.90','$98.20','$176.35','94.20%']
+  ]
+};
+// [{ label, row }] — the module's pickable KPIs, in GRID_KPI_OPTIONS order.
+function gridKpiOptionsFor(moduleKey){
+  const base = GRID_SECTION_BY_KEY[moduleKey];
+  const rows = (base ? base.rows : []).concat(GRID_KPI_EXTRA_ROWS[moduleKey] || []);
+  return (GRID_KPI_OPTIONS[moduleKey] || []).map(label => {
+    const row = rows.find(r => r[0]===label);
+    return row ? { label, row } : null;
+  }).filter(Boolean);
+}
+// The section actually rendered for a placed grid slot — its picked KPIs
+// if it has any, otherwise the module's default rows.
+function resolveGridSection(slot){
+  const base = GRID_SECTION_BY_KEY[slot.key];
+  if(!base) return null;
+  if(GRID_KPI_CONFIGURABLE.indexOf(slot.key) === -1 || !Array.isArray(slot.kpis) || !slot.kpis.length) return base;
+  return Object.assign({}, base, { rows: slot.kpis.map(k => k.row) });
+}
+
 const KPI_BY_KEY = {
   storehealth_labor_pct: KPI_ROWS.storehealth[0],
   storehealth_food_cost_pct: KPI_ROWS.storehealth[1],
@@ -374,6 +420,7 @@ const KPI_DIRECTION = {
   'Actual Sales':'higher', 'Early Clock In':'lower', 'Late Clock Out':'lower', 'OT Loss':'lower',
   'Transactions':'higher', 'Labor Hours':'lower', 'Act vs Ideal Hrs.':'zero', 'Act vs Sch Hrs.':'zero',
   'Financial Loss ($)':'lower', 'Time Loss (Hrs.)':'lower', 'Act vs Fct Sales':'zero', 'Act vs Fct Trans.':'zero',
+  'Scheduled OT %':'lower', 'Ideal Usage %':'lower', 'Gross Sales':'higher', 'Discount':'lower',
   'Scheduled Labor %':'lower', 'Variance':'zero', 'Waste':'lower', 'Actual Labor %':'lower', 'Refunds/Voids/Comps':'lower', 'Cash Over/Short':'zero',
   'Dropped Shifts':'lower', 'Unapproved Shifts':'lower', 'OT Violations':'lower', 'Late Night Work':'lower', 'Minor Violations':'lower',
   'Break Violations':'lower', 'Paid Break Violations':'lower', 'Unpaid Break Violations':'lower', 'No. of Employees Violated Break':'lower',
@@ -451,7 +498,7 @@ function buildBaseKpiCatalog(){
           if(k) addTile(dash.id, k, kpiIdx);
           kpiIdx++;
         }else if(layout.kind === 'grid'){
-          const sec = GRID_SECTION_BY_KEY[slot.key];
+          const sec = resolveGridSection(slot);
           if(sec) addRows(dash.id, sec, secIdx);
           secIdx++;
         }

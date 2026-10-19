@@ -667,7 +667,25 @@ function gridPreviewHeadHtml(slot){
   const scoreTh = GRID_SECTION_HAS_SCORE.has(slot.key) ? '<th>SCORE</th>' : '';
   return `<tr><th>KPI</th><th class="shade">CUR</th><th>WTD</th><th class="shade">LW (SD)</th><th>LW (WTD)</th><th class="shade">LW (TOT)</th>${scoreTh}</tr>`;
 }
+/* KPI names a placed grid slot currently shows — its picked KPIs for a
+   configurable module (see GRID_KPI_CONFIGURABLE in dashboard-data.js),
+   otherwise the module's fixed list. */
+function gridSlotKpiLabels(slot){
+  if(GRID_KPI_CONFIGURABLE.indexOf(slot.key)!==-1 && Array.isArray(slot.kpis) && slot.kpis.length) return slot.kpis.map(k=>k.label);
+  return GRID_SECTION_KPIS[slot.key] || [];
+}
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function gridPreviewRowsHtml(slot){
+  // Configurable modules show their picked KPIs (chosen in the KPI Settings
+  // popup) with that KPI's own figures; other modules keep sample values.
+  if(GRID_KPI_CONFIGURABLE.indexOf(slot.key)!==-1){
+    const options = gridKpiOptionsFor(slot.key);
+    return gridSlotKpiLabels(slot).map((label,i)=>{
+      const opt = options.find(o=>o.label===label);
+      const v = opt ? opt.row.slice(1) : GRID_PREVIEW_SAMPLE_VALUES[i % GRID_PREVIEW_SAMPLE_VALUES.length];
+      return `<tr><td>${label}</td><td class="shade">${v[0]}</td><td>${v[1]}</td><td class="shade">${v[2]}</td><td>${v[3]}</td><td class="shade">${v[4]}</td><td class="score">${v[5]}</td></tr>`;
+    }).join('');
+  }
   const names = GRID_SECTION_KPIS[slot.key] || ['Sample Metric 1','Sample Metric 2'];
   const hasScore = GRID_SECTION_HAS_SCORE.has(slot.key);
   return names.map((name,i) => {
@@ -800,32 +818,91 @@ function removeComponent(rIdx,sIdx){
    itself (slot.targets = { "KPI name": number }), saved with the rest of
    editing.sections when the dashboard is saved — so a target follows this
    specific placement of the module, the same way its color/icon do. */
+function gridKpiSettingsCtxOptionsCount(slot){ return (GRID_KPI_OPTIONS[slot.key] || []).length; }
+/* For Store Health's configurable modules (GRID_KPI_CONFIGURABLE) the KPI
+   name on each row is a dropdown of the module's fixed KPI list, so
+   the popup is also where the module's 3 KPIs are picked. Nothing touches
+   the slot until Save Settings — Cancel discards both KPI and target edits. */
 let gridKpiSettingsCtx = null;
+function gridTargetDefaultFor(slot, name){
+  const targets = slot.targets || {};
+  if(targets[name]!==undefined) return targets[name];
+  const fallback = GRID_KPI_TARGET_DEFAULTS[slot.key + '|' + name];
+  return fallback!==undefined ? fallback : '';
+}
+function gridKpiSettingsRowHtml(slot, name, i, options){
+  const note = GRID_KPI_TARGET_NOTES[slot.key + '|' + name];
+  let nameHtml = `<div class="text-[13.5px] font-medium text-slate-700">${name}</div>`;
+  if(options){
+    nameHtml = `<select class="grid-kpi-pick" data-row-idx="${i}" title="Change KPI" onchange="onGridKpiPickChange(this)">${
+      options.map(o=>`<option value="${escAttr(o.label)}"${o.label===name?' selected':''}>${escAttr(o.label)}</option>`).join('')
+    }</select>`;
+  }
+  return `
+    <div class="flex items-center justify-between gap-4 py-2.5 border-b border-slate-100" data-kpi-row="${i}">
+      <div class="min-w-0 flex-1">
+        ${nameHtml}
+        <div class="grid-kpi-note text-[11px] text-amber-600 mt-0.5${note?'':' hidden'}">${note||''}</div>
+      </div>
+      <input type="number" step="any" data-kpi-name="${escAttr(name)}"
+        value="${gridTargetDefaultFor(slot, name)}" placeholder="e.g. 25"
+        class="w-28 border border-slate-300 rounded-lg px-3 py-1.5 text-[13px] text-right focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>`;
+}
+function renderGridKpiSettingsRows(slot, names){
+  const options = gridKpiSettingsCtx.options;
+  document.getElementById('gridKpiSettingsRows').innerHTML = names.map((name,i) => gridKpiSettingsRowHtml(slot, name, i, options)).join('')
+    || `<div class="text-slate-400 text-[13px] py-4 text-center">No KPIs found for this module.</div>`;
+  refreshGridKpiPickDisabled();
+}
 function openGridKpiSettings(rIdx, sIdx){
   const slot = editing.sections[rIdx] && editing.sections[rIdx].slots[sIdx];
   if(!slot) return;
-  gridKpiSettingsCtx = { rIdx, sIdx };
-  const kpis = GRID_SECTION_KPIS[slot.key] || [];
-  const targets = slot.targets || {};
+  const configurable = GRID_KPI_CONFIGURABLE.indexOf(slot.key)!==-1;
+  gridKpiSettingsCtx = { rIdx, sIdx, options: configurable ? gridKpiOptionsFor(slot.key) : null };
   document.getElementById('gridKpiSettingsSubtitle').textContent = slot.label;
-  document.getElementById('gridKpiSettingsRows').innerHTML = kpis.map(name => {
-    const noteKey = slot.key + '|' + name;
-    const note = GRID_KPI_TARGET_NOTES[noteKey];
-    const fallback = GRID_KPI_TARGET_DEFAULTS[noteKey];
-    const val = targets[name]!==undefined ? targets[name] : (fallback!==undefined ? fallback : '');
-    return `
-    <div class="flex items-center justify-between gap-4 py-2.5 border-b border-slate-100">
-      <div>
-        <div class="text-[13.5px] font-medium text-slate-700">${name}</div>
-        ${note ? `<div class="text-[11px] text-amber-600 mt-0.5">${note}</div>` : ''}
-      </div>
-      <input type="number" step="any" data-kpi-name="${name.replace(/"/g,'&quot;')}"
-        value="${val}" placeholder="e.g. 25"
-        class="w-28 border border-slate-300 rounded-lg px-3 py-1.5 text-[13px] text-right focus:outline-none focus:ring-2 focus:ring-blue-400">
-    </div>`;
-  }).join('') || `<div class="text-slate-400 text-[13px] py-4 text-center">No KPIs found for this module.</div>`;
+  document.getElementById('gridKpiSettingsHint').innerHTML = configurable
+    ? `<i data-lucide="sliders-horizontal"></i><span>Pick any <b>${GRID_KPI_SLOT_COUNT}</b> of this module's ${gridKpiSettingsCtxOptionsCount(slot)} KPIs and set a target for each.</span>`
+    : '';
+  document.getElementById('gridKpiSettingsHint').classList.toggle('hidden', !configurable);
+  document.getElementById('gridKpiSettingsResetBtn').classList.toggle('hidden', !configurable);
+  document.getElementById('gridKpiSettingsModal').querySelector('.modal-box').style.width = configurable ? 'min(560px,92vw)' : 'min(460px,92vw)';
+  renderGridKpiSettingsRows(slot, gridSlotKpiLabels(slot));
   document.getElementById('gridKpiSettingsModal').classList.remove('hidden');
   if(window.lucide) lucide.createIcons();
+}
+// Each KPI may appear only once per module — options picked in another row are disabled.
+function refreshGridKpiPickDisabled(){
+  const sels = [...document.querySelectorAll('#gridKpiSettingsRows select.grid-kpi-pick')];
+  const picked = sels.map(s=>s.value);
+  sels.forEach((s,i)=>{
+    [...s.options].forEach(o=>{
+      const used = picked.indexOf(o.value)!==-1 && picked[i]!==o.value;
+      o.disabled = used;
+      o.textContent = o.value + (used ? ' (in use)' : '');
+    });
+  });
+}
+// A swapped-in KPI starts from its own target (saved or default), not the previous KPI's.
+function onGridKpiPickChange(sel){
+  const { rIdx, sIdx } = gridKpiSettingsCtx;
+  const slot = editing.sections[rIdx].slots[sIdx];
+  const row = sel.closest('[data-kpi-row]');
+  const inp = row.querySelector('input[data-kpi-name]');
+  inp.dataset.kpiName = sel.value;
+  inp.value = gridTargetDefaultFor(slot, sel.value);
+  const note = GRID_KPI_TARGET_NOTES[slot.key + '|' + sel.value];
+  const noteEl = row.querySelector('.grid-kpi-note');
+  noteEl.textContent = note || '';
+  noteEl.classList.toggle('hidden', !note);
+  refreshGridKpiPickDisabled();
+}
+function resetGridKpiSettings(){
+  if(!gridKpiSettingsCtx) return;
+  const { rIdx, sIdx } = gridKpiSettingsCtx;
+  const slot = editing.sections[rIdx].slots[sIdx];
+  const defaults = GRID_SECTION_KPIS[slot.key] || [];
+  renderGridKpiSettingsRows({ key:slot.key, targets:gridTargetsFor(slot.key) }, defaults);
 }
 function closeGridKpiSettings(){
   gridKpiSettingsCtx = null;
@@ -833,9 +910,15 @@ function closeGridKpiSettings(){
 }
 function saveGridKpiSettings(){
   if(!gridKpiSettingsCtx) return;
-  const { rIdx, sIdx } = gridKpiSettingsCtx;
+  const { rIdx, sIdx, options } = gridKpiSettingsCtx;
   const slot = editing.sections[rIdx] && editing.sections[rIdx].slots[sIdx];
   if(slot){
+    if(options){
+      const labels = [...document.querySelectorAll('#gridKpiSettingsRows select.grid-kpi-pick')].map(s=>s.value);
+      const defaults = GRID_SECTION_KPIS[slot.key] || [];
+      if(labels.join('|')===defaults.join('|')) delete slot.kpis;
+      else slot.kpis = labels.map(l => { const o = options.find(x=>x.label===l); return { label:l, row:(o ? o.row : [l]).slice() }; });
+    }
     const targets = {};
     document.querySelectorAll('#gridKpiSettingsRows input[data-kpi-name]').forEach(inp=>{
       const v = inp.value.trim();
