@@ -138,9 +138,12 @@ function renderAppSettingsView(){
 }
 
 /* ---------------- Dashboards list (table) ---------------- */
+// Managed from Global Setting only — not listed under Organization Setting.
+const GLOBAL_ONLY_DASHBOARD_IDS = ['dailydigest','aihub','pulseindex'];
 function getVisibleDashboardsSorted(){
   const term = dashSearchTerm.trim().toLowerCase();
-  const filtered = term ? dashboards.filter(d => d.name.toLowerCase().includes(term) || String(d.order).includes(term)) : dashboards;
+  const scoped = SCOPE==='organization' ? dashboards.filter(d => !GLOBAL_ONLY_DASHBOARD_IDS.includes(d.id)) : dashboards;
+  const filtered = term ? scoped.filter(d => d.name.toLowerCase().includes(term) || String(d.order).includes(term)) : scoped;
   return [...filtered].sort((a,b)=>a.order-b.order);
 }
 function onDashSearchInput(v){
