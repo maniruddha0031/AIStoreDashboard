@@ -87,7 +87,7 @@ function render(){
   renderKpiFamilyCrumbs();
   // KPI Family screens use the full width (no reserved sidebar track); the
   // editor pins its chrome and only scrolls the family/KPI list in the middle
-  document.querySelector('.app-row').classList.toggle('kf-full', SECTION==='kpifamily');
+  document.querySelector('.app-row').classList.toggle('kf-full', SECTION==='kpifamily' || SECTION==='aidashboardsettings');
   document.getElementById('mainContentScroll').classList.toggle('kfe-mode', SECTION==='kpifamily' && kpiFamilyView==='editor');
   customKpiListView.classList.toggle('hidden', SECTION!=='customkpi');
   manageAccountView.classList.toggle('hidden', SECTION!=='manageaccount');
@@ -1364,14 +1364,31 @@ function backToKpiFamilyList(){
 function renderKpiFamilyCrumbs(){
   const bar = document.getElementById('kfeCrumbBar');
   if(!bar) return;
-  const show = SECTION === 'kpifamily';
+  const show = SECTION === 'kpifamily' || SECTION === 'aidashboardsettings';
   bar.classList.toggle('hidden', !show);
   if(!show) return;
   const sep = '<i data-lucide="chevron-right" class="kfe-crumb-sep"></i>';
+  if(SECTION === 'aidashboardsettings'){
+    bar.innerHTML = `<a href="settings.html?section=manageaccount">Manage Account</a>${sep}<a href="settings.html?section=appsettings">App Settings</a>${sep}<b>AI Dashboard</b><span class="kfe-crumb-org">Original Fish Taco, LLC</span>`;
+    if(window.lucide) lucide.createIcons();
+    return;
+  }
   bar.innerHTML = kpiFamilyView === 'editor'
     ? `<a onclick="kfeLeaveToSettings()">Settings</a>${sep}<a onclick="backToKpiFamilyList()">KPI Families</a>${sep}<b>Edit family</b>`
     : `<a onclick="kfeLeaveToSettings()">Settings</a>${sep}<b>KPI Families</b>`;
   if(window.lucide) lucide.createIcons();
+}
+// AI Dashboard settings page search — filters the Global Settings cards by title/description.
+function filterAiDashboardSettings(v){
+  const q = (v || '').trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#asetGrid .aset-card').forEach(c => {
+    const hit = !q || c.textContent.toLowerCase().includes(q);
+    c.classList.toggle('hidden', !hit);
+    if(hit) shown++;
+  });
+  document.getElementById('asetCount').textContent = shown;
+  document.getElementById('asetEmpty').classList.toggle('hidden', shown > 0);
 }
 // Breadcrumb "Settings" — back to the AI Dashboard settings page, same unsaved-changes guard as Back.
 function kfeLeaveToSettings(){

@@ -515,28 +515,51 @@
         </div>
       </div>
 
-      <!-- AI DASHBOARD SETTINGS VIEW -->
-      <div id="aiDashboardSettingsView" class="hidden acct-page">
-        <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><a href="settings.html?section=appsettings">App Settings</a><i data-lucide="chevron-right"></i><span>AI Dashboard</span></div>
-        <h1 class="text-[18px] font-bold text-slate-800 mb-6">AI Dashboard</h1>
-        <div class="acct-grid">
-          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=kpifamily'">
-            <div class="acct-card-icon" style="background:#e9edfb;"><i data-lucide="layers" style="color:#4f46e5"></i></div>
-            <div class="acct-card-label">KPI Family</div>
+      <!-- AI DASHBOARD SETTINGS VIEW (Manage Account > App Settings > AI Dashboard) -->
+      <div id="aiDashboardSettingsView" class="hidden">
+        <div class="aset-head">
+          <span class="aset-app"><img src="assets/ai-dashboard-logo.svg" alt=""></span>
+          <div>
+            <div class="aset-eyebrow">Settings</div>
+            <div class="aset-title">AI Dashboard</div>
           </div>
-          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=kpisettings'">
-            <div class="acct-card-icon" style="background:#dbf3f5;"><i data-lucide="gauge" style="color:#0891b2"></i></div>
-            <div class="acct-card-label">KPI Settings</div>
-          </div>
-          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=customkpi'">
-            <div class="acct-card-icon" style="background:#efe4fb;"><i data-lucide="calculator" style="color:#9333ea"></i></div>
-            <div class="acct-card-label">Custom KPI</div>
-          </div>
-          <div class="acct-card acct-card-link" onclick="location.href='settings.html?scope=organization&opendashschedule=1'">
-            <div class="acct-card-icon" style="background:#fdecd8;"><i data-lucide="calendar-clock" style="color:#d97706"></i></div>
-            <div class="acct-card-label">Dashboard Scheduling</div>
+          <div class="aset-search">
+            <i data-lucide="search"></i>
+            <input type="text" placeholder="Type to Search" oninput="filterAiDashboardSettings(this.value)">
           </div>
         </div>
+        <section class="aset-section">
+          <div class="aset-section-head">
+            <span class="aset-sec-ic"><i data-lucide="globe"></i></span>
+            <div>
+              <div class="aset-sec-title">Global Settings <span class="aset-count" id="asetCount">4</span></div>
+              <div class="aset-sec-sub">You can configure your organization's Global Settings for AI Dashboard from here only.</div>
+            </div>
+          </div>
+          <div class="aset-grid" id="asetGrid">
+            <a class="aset-card" href="settings.html?section=kpifamily">
+              <span class="aset-card-ic"><i data-lucide="layers"></i></span>
+              <span class="aset-card-txt"><b>KPI Family</b><small>Group KPIs into families for the KPI trend popup's Add Metric overlay.</small></span>
+              <span class="aset-go"><i data-lucide="chevron-right"></i></span>
+            </a>
+            <a class="aset-card" href="settings.html?section=kpisettings">
+              <span class="aset-card-ic"><i data-lucide="gauge"></i></span>
+              <span class="aset-card-txt"><b>KPI Settings</b><small>Set whether lower, higher or closer to zero is better for each KPI.</small></span>
+              <span class="aset-go"><i data-lucide="chevron-right"></i></span>
+            </a>
+            <a class="aset-card" href="settings.html?section=customkpi">
+              <span class="aset-card-ic"><i data-lucide="calculator"></i></span>
+              <span class="aset-card-txt"><b>Custom KPI</b><small>Create your own KPIs from a formula over two existing KPIs.</small></span>
+              <span class="aset-go"><i data-lucide="chevron-right"></i></span>
+            </a>
+            <a class="aset-card" href="settings.html?scope=organization&amp;opendashschedule=1">
+              <span class="aset-card-ic"><i data-lucide="calendar-clock"></i></span>
+              <span class="aset-card-txt"><b>Dashboard Scheduling</b><small>Schedule dashboards to be emailed to roles on a set frequency.</small></span>
+              <span class="aset-go"><i data-lucide="chevron-right"></i></span>
+            </a>
+          </div>
+          <div class="aset-empty hidden" id="asetEmpty"><i data-lucide="search-x"></i>No settings match your search.</div>
+        </section>
       </div>
 
     </div>
