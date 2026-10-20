@@ -88,6 +88,15 @@
   </div>
 </div>
 
+<!-- BREADCRUMB STRIP (KPI Family editor) — full width, between top bar and page -->
+<nav id="kfeCrumbBar" class="kfe-crumbs hidden" aria-label="Breadcrumb">
+  <a onclick="kfeLeaveToSettings()">Settings</a>
+  <i data-lucide="chevron-right" class="kfe-crumb-sep"></i>
+  <a onclick="backToKpiFamilyList()">KPI Families</a>
+  <i data-lucide="chevron-right" class="kfe-crumb-sep"></i>
+  <b>Edit family</b>
+</nav>
+
 <div class="app-row flex flex-1 min-h-0">
 
   <!-- SIDEBAR (3 menus only) -->
@@ -243,7 +252,7 @@
           <h1 class="text-[18px] font-bold text-slate-800">KPI Family</h1>
           <div class="flex items-center gap-3">
             <button class="pill-btn pill-red" onclick="location.href='settings.html?section=aidashboardsettings'"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
-            <button class="pill-btn pill-blue" onclick="openKpiFamilyEditor(null)"><i data-lucide="plus" style="width:14px;height:14px"></i>Add Family</button>
+            <button class="pill-btn pill-blue" onclick="openAddFamilyModal()"><i data-lucide="plus" style="width:14px;height:14px"></i>Add Family</button>
           </div>
         </div>
         <div class="card" style="overflow-x:auto;">
@@ -263,21 +272,62 @@
 
       <!-- KPI FAMILY EDITOR VIEW -->
       <div id="kpiFamilyEditorView" class="hidden">
-        <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div class="flex items-center gap-3">
-            <input type="text" id="kpiFamilyNameInput" placeholder="Family name"
-              class="border border-slate-300 rounded-lg px-3 py-2 text-[14px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400" style="width:280px;">
+        <div class="kfe-wrap">
+          <div class="kfe-top">
+            <div>
+              <div class="kfe-switch-row">
+                <div class="kfe-switch" id="kfeSwitch">
+                  <button type="button" class="kfe-switch-btn" onclick="toggleKfeSwitch(event)">
+                    <span class="kfe-dot" id="kfeSwitchDot"></span><span id="kfeSwitchLabel"></span>
+                    <i data-lucide="chevron-down"></i>
+                  </button>
+                  <div class="kfe-switch-menu hidden" id="kfeSwitchMenu"></div>
+                </div>
+                <input type="text" id="kpiFamilyNameInput" class="kfe-rename hidden" placeholder="Family name"
+                  onkeydown="if(event.key==='Enter') this.blur(); if(event.key==='Escape'){ this.value=editingFamily.name; this.blur(); }" onblur="commitKfeRename()">
+                <button type="button" class="kfe-icon-btn" id="kfeRenameBtn" title="Rename family" onclick="startKfeRename()"><i data-lucide="pencil"></i></button>
+              </div>
+            </div>
+            <div class="kfe-actions">
+              <span class="kfe-dirty hidden" id="kfeDirty"><span></span>Unsaved changes</span>
+              <button class="pill-btn pill-red" onclick="backToKpiFamilyList()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
+              <button class="pill-btn pill-green" onclick="saveKpiFamilyEditor()"><i data-lucide="save" style="width:14px;height:14px"></i>Save</button>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button class="pill-btn pill-red" onclick="backToKpiFamilyList()"><i data-lucide="arrow-left" style="width:14px;height:14px"></i>Back</button>
-            <button class="pill-btn pill-green" onclick="saveKpiFamilyEditor()"><i data-lucide="save" style="width:14px;height:14px"></i>Save</button>
+          <div class="kfe-grid">
+            <!-- left: categories -->
+            <aside class="kfe-card kfe-cats">
+              <div class="kfe-cats-title">KPI Categories</div>
+              <div id="kfeCats"></div>
+              <div class="kfe-cats-note">Counts show KPIs in the family you're editing.</div>
+            </aside>
+            <!-- middle: toolbar + family groups -->
+            <div class="kfe-main">
+              <div class="kfe-card kfe-toolbar">
+                <div class="kf-search kfe-search">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="kfEdSearch" placeholder="Search KPIs..." oninput="onKfEdSearch(this.value)">
+                </div>
+                <div class="kfe-seg" id="kfeUnitSeg"></div>
+                <label class="kfe-check"><input type="checkbox" id="kfeOnlyIn" onchange="kfeOnlyIn=this.checked; renderKpiFamilyMemberPicker();">In this family only</label>
+                <label class="kfe-check"><input type="checkbox" id="kfeOnlyShared" onchange="kfeOnlyShared=this.checked; renderKpiFamilyMemberPicker();">Shared KPIs only</label>
+                <button type="button" class="kfe-ghost-btn" onclick="clearKfeFamily()">Clear family</button>
+              </div>
+              <div id="kpiFamilyMemberPicker" class="kfe-groups"></div>
+            </div>
+            <!-- right: summary + members -->
+            <aside class="kfe-side">
+              <div class="kfe-card kfe-summary" id="kfeSummary"></div>
+              <div class="kfe-card kfe-members">
+                <div class="kfe-side-title">KPIs in this family</div>
+                <div id="kfeMemberList"></div>
+              </div>
+            </aside>
           </div>
         </div>
-        <div class="card p-6">
-          <div class="text-[13px] text-slate-500 mb-3">Pick every KPI that belongs to this family. If the picked KPIs span more than one data type ($, %, number), the KPI trend popup's Add Metric overlay renders a 2-axis chart automatically.</div>
-          <div id="kpiFamilyMemberPicker"></div>
-        </div>
+        <div class="kfe-pop hidden" id="kfePop"></div>
       </div>
+      <div id="kfToast" class="kf-toast"></div>
 
       <!-- CUSTOM KPI LIST VIEW -->
       <div id="customKpiListView" class="hidden">
@@ -317,7 +367,7 @@
       <div id="manageAccountView" class="hidden acct-page">
         <h1 class="text-[18px] font-bold text-slate-800 mb-6">Manage Account</h1>
         <div class="acct-grid">
-          <div class="acct-card">
+          <div class="acct-card acct-card-link" onclick="location.href='settings.html?section=myorganization'">
             <div class="acct-card-icon" style="background:#fdecd8;"><i data-lucide="building-2" style="color:#d97706"></i></div>
             <div class="acct-card-label">My Organization</div>
           </div>
@@ -357,6 +407,112 @@
         <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><span>App Settings</span></div>
         <h1 class="text-[18px] font-bold text-slate-800 mb-6">App Settings</h1>
         <div class="acct-grid" id="appSettingsGrid"></div>
+      </div>
+
+      <!-- MY ORGANIZATION VIEW (Manage Account > My Organization) -->
+      <div id="myOrganizationView" class="hidden">
+        <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><span>My Organization</span></div>
+        <div class="org-head"><i data-lucide="building-2"></i><span>My Organization</span></div>
+        <div class="org-grid">
+          <div class="org-card">
+            <span class="org-ic"><i data-lucide="building-2" style="color:#3b82f6"></i></span>
+            <span><span class="org-title">Organization Profile</span><span class="org-sub">Set up your organization profile details.</span></span>
+          </div>
+          <div class="org-card">
+            <span class="org-ic"><i data-lucide="settings-2" style="color:#6366f1"></i></span>
+            <span><span class="org-title">Organization Settings</span><span class="org-sub">Set up your organization preferences.</span></span>
+          </div>
+          <div class="org-card">
+            <span class="org-ic"><i data-lucide="calendar-clock" style="color:#f59e0b"></i></span>
+            <span><span class="org-title">Format Settings</span><span class="org-sub">Set up your format for different organization elements.</span></span>
+          </div>
+          <div class="org-card">
+            <span class="org-ic"><i data-lucide="user-cog" style="color:#8b5cf6"></i></span>
+            <span><span class="org-title">Manage User Privileges</span><span class="org-sub">Manage User Privileges</span></span>
+          </div>
+          <a class="org-card org-card-link" href="settings.html?section=kpiconfig">
+            <span class="org-ic"><i data-lucide="gauge" style="color:#10b981"></i></span>
+            <span><span class="org-title">KPIs Configuration</span><span class="org-sub">Enable KPIs &amp; set display order for mobile.</span></span>
+          </a>
+        </div>
+      </div>
+
+      <!-- KPIs CONFIGURATION VIEW (Manage Account > My Organization > KPIs Configuration) -->
+      <div id="kpiConfigView" class="hidden">
+        <div class="acct-breadcrumb mb-2"><a href="settings.html?section=manageaccount">Manage Account</a><i data-lucide="chevron-right"></i><a href="settings.html?section=myorganization">My Organization</a><i data-lucide="chevron-right"></i><span>KPIs Configuration</span></div>
+        <div class="kc-head">
+          <div class="kc-head-left">
+            <div class="kc-donut" id="kcDonut" style="--p:0"><span id="kcDonutLabel">0/0</span></div>
+            <div class="min-w-0">
+              <h1 class="kc-title">KPIs Configuration</h1>
+              <p class="kc-sub">Only <strong>enabled</strong> KPIs appear in the manager mobile app. Use <strong>Update Order</strong> to set their display sequence.</p>
+            </div>
+          </div>
+          <div class="kc-head-actions">
+            <button class="kc-btn-soft" onclick="kcOpenOrder()"><i data-lucide="arrow-up-down"></i>Update Order</button>
+            <button class="kc-btn-link" onclick="kcReset()">Reset to Default</button>
+            <button id="kcSaveBtn" class="kc-btn-primary" onclick="kcSave()" disabled>Save Changes</button>
+          </div>
+        </div>
+
+        <div class="kc-sticky">
+          <div class="kc-toolbar">
+            <div class="kc-toolbar-left">
+              <div class="kc-search-wrap">
+                <i data-lucide="search"></i>
+                <input id="kcSearch" type="text" placeholder="Search KPIs by name or description..." class="kc-search" oninput="kcOnSearch(this.value)">
+              </div>
+              <span id="kcVisibleCount" class="kc-visible"></span>
+            </div>
+            <div class="relative">
+              <button id="kcFiltersBtn" class="kc-filters-btn" onclick="kcToggleFilters()">
+                Filters <i data-lucide="sliders-horizontal"></i>
+                <span id="kcFiltersDot" class="kc-filters-dot hidden"></span>
+              </button>
+              <div id="kcFiltersPopover" class="kc-filters-pop hidden">
+                <div class="kc-filters-grid">
+                  <div>
+                    <div class="kc-filter-title">KPI Status</div>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcStatusRadio" value="all" checked> All</span><span class="kc-filter-n" id="kcCntAll"></span></label>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcStatusRadio" value="on"> Enabled</span><span class="kc-filter-n" id="kcCntOn"></span></label>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcStatusRadio" value="off"> Disabled</span><span class="kc-filter-n" id="kcCntOff"></span></label>
+                  </div>
+                  <div class="kc-filter-col">
+                    <div class="kc-filter-title">Data Type</div>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcTypeRadio" value="ALL" checked> All Types</span></label>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcTypeRadio" value="DOLLAR"> Dollar</span><span class="kc-filter-n" id="kcCntDollar"></span></label>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcTypeRadio" value="NUMBER"> Number</span><span class="kc-filter-n" id="kcCntNumber"></span></label>
+                    <label class="kc-filter-opt"><span><input type="radio" name="kcTypeRadio" value="HOURS"> Hours</span><span class="kc-filter-n" id="kcCntHours"></span></label>
+                  </div>
+                  <div class="kc-filter-col">
+                    <div class="kc-filter-title">Module</div>
+                    <div class="kc-filter-scroll" id="kcModuleFilterList"></div>
+                  </div>
+                </div>
+                <div class="kc-filters-foot">
+                  <button class="kc-filters-clear" onclick="kcClearFilters()">Clear</button>
+                  <button class="kc-filters-apply" onclick="kcApplyFilters()">Apply</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="kc-list-hdr kc-grid">
+            <div></div>
+            <div>KPI Name</div>
+            <div>KPI Description</div>
+            <div>Module</div>
+            <div>Supporting KPI 1</div>
+            <div>Supporting KPI 2</div>
+            <div class="text-center">Enable on Mobile</div>
+            <div class="text-center">Edit</div>
+          </div>
+        </div>
+        <div id="kcList" class="kc-list"></div>
+        <div id="kcEmpty" class="kc-empty hidden">
+          <i data-lucide="search-x"></i>
+          <p class="kc-empty-title">No KPIs found</p>
+          <p>Try a different search term or filter.</p>
+        </div>
       </div>
 
       <!-- AI DASHBOARD SETTINGS VIEW -->
@@ -759,6 +915,94 @@
   </div>
 </div>
 
+<!-- KPIs CONFIGURATION: EDIT KPI MODAL -->
+<div id="kcEditModal" class="hidden kc-modal-overlay" onclick="if(event.target===this) kcCloseEdit()">
+  <div class="kc-modal" style="width:420px;">
+    <div class="kc-modal-head"><h2>Edit KPI</h2><button onclick="kcCloseEdit()"><i data-lucide="x"></i></button></div>
+    <div class="kc-modal-body">
+      <div class="flex items-center gap-3">
+        <span id="kcEditIcon" class="kc-ic" style="width:40px;height:40px"></span>
+        <div class="flex-1">
+          <label class="kc-label">KPI Name</label>
+          <input id="kcEditName" type="text" class="kc-input">
+        </div>
+      </div>
+      <p id="kcEditDesc" class="kc-edit-desc"></p>
+      <div class="kc-edit-active">
+        <div>
+          <div class="kc-edit-active-title">Active on Mobile</div>
+          <div class="kc-edit-active-sub">Managers see this KPI in the mobile app</div>
+        </div>
+        <button id="kcEditToggle" class="kc-toggle" onclick="kcToggleEditActive()" role="switch"></button>
+      </div>
+    </div>
+    <div class="kc-modal-foot">
+      <button class="kc-btn-link" onclick="kcCloseEdit()">Cancel</button>
+      <button class="kc-btn-primary" onclick="kcSaveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs CONFIGURATION: UPDATE DISPLAY ORDER MODAL -->
+<div id="kcOrderModal" class="hidden kc-modal-overlay" onclick="if(event.target===this) kcCloseOrder()">
+  <div class="kc-modal" style="width:560px; max-height:82vh; display:flex; flex-direction:column;">
+    <div class="kc-modal-head"><h2>Update Display Order</h2><button onclick="kcCloseOrder()"><i data-lucide="x"></i></button></div>
+    <p class="kc-order-note">Only active (enabled) KPIs are listed. Give each one a unique position.</p>
+    <div id="kcOrderMsg" class="kc-order-msg hidden"></div>
+    <div class="kc-order-scroll">
+      <div class="kc-order-row kc-order-hdr"><div>KPI</div><div class="text-center">Current Order</div><div class="text-center">Updated Order</div></div>
+      <div id="kcOrderRows"></div>
+    </div>
+    <div class="kc-modal-foot">
+      <button class="kc-btn-link" onclick="kcCloseOrder()">Cancel</button>
+      <button class="kc-btn-primary" onclick="kcSaveOrder()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPIs CONFIGURATION: TOAST -->
+<div id="kcToast" class="kc-toast"><i data-lucide="check-circle-2"></i><span id="kcToastMsg">KPI configuration saved</span></div>
+
+<!-- ADD KPI FAMILY MODAL (name + multi-select KPI dropdown) -->
+<div id="addFamilyModal" class="hidden modal-overlay" onclick="if(event.target===this) closeAddFamilyModal()">
+  <div class="modal-box p-7" style="width:min(560px,94vw); overflow:visible;">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h2 class="text-[18px] font-extrabold text-slate-800">Add Family</h2>
+        <div class="text-[12.5px] text-slate-500 mt-0.5">Name the family and pick its KPIs. A KPI can belong to more than one family.</div>
+      </div>
+      <button onclick="closeAddFamilyModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <label class="kf-field-label" for="addFamilyName">Family Name</label>
+    <input type="text" id="addFamilyName" placeholder="e.g. Labor Cost" oninput="this.classList.remove('kf-invalid')"
+      class="kf-field-input">
+    <label class="kf-field-label mt-4">KPIs</label>
+    <div class="kf-ms" id="addFamilyMs">
+      <div class="kf-ms-control" onclick="toggleAddFamilyDropdown(event)">
+        <div class="kf-ms-chips" id="addFamilyChips"></div>
+        <i data-lucide="chevron-down" class="kf-ms-caret"></i>
+      </div>
+      <div class="kf-ms-panel hidden" id="addFamilyPanel">
+        <div class="kf-ms-search">
+          <i data-lucide="search"></i>
+          <input type="text" id="addFamilySearch" placeholder="Search KPIs" oninput="onAddFamilySearch(this.value)">
+        </div>
+        <div class="kf-ms-list" id="addFamilyOptions"></div>
+        <div class="kf-ms-foot">
+          <span id="addFamilyCount">0 selected</span>
+          <button type="button" class="kf-link" onclick="clearAddFamilySelection(event)">Clear</button>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center justify-end gap-3 mt-7">
+      <button class="pill-btn" style="background:#e2e8f0;color:#334155;" onclick="closeAddFamilyModal()">Cancel</button>
+      <button class="pill-btn pill-blue" onclick="saveAddFamilyModal()"><i data-lucide="check" style="width:14px;height:14px"></i>Create Family</button>
+    </div>
+  </div>
+</div>
+
 <!-- GRID KPI SETTINGS MODAL (target value per KPI, for a grid module) -->
 <div id="gridKpiSettingsModal" class="hidden modal-overlay" onclick="if(event.target===this) closeGridKpiSettings()">
   <div class="modal-box p-7" style="width:min(460px,92vw);">
@@ -991,6 +1235,8 @@
 <script src="assets/app.js"></script>
 <script src="assets/dashboard-data.js"></script>
 <script src="assets/trend-modal.js"></script>
+<script src="assets/kpi-config-data.js"></script>
+<script src="assets/kpi-config.js"></script>
 <script src="assets/settings.js"></script>
 <script src="assets/chatbot.js"></script>
 </body>

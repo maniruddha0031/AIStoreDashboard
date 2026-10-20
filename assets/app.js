@@ -446,15 +446,29 @@ function buildDefaultKpiFamilies(){
     id: uid('fam'), name: mod, module: mod, memberKeys: byModule[mod]
   }));
 }
+/* A KPI can sit in any number of families, or none. Only a KPI the
+   catalog has never shown before gets auto-placed into its module's
+   family — once it has been seen, wherever the admin puts it (including
+   nowhere) is left alone, so removing/moving a KPI actually sticks. */
+const KPI_FAMILY_SEEN_KEY = 'aidash_kpi_family_seen_v1';
 function loadKpiFamilies(){
   let list = null;
   try{ list = JSON.parse(localStorage.getItem(STORAGE_KEYS.kpiFamilies)); }catch(e){ list = null; }
-  if(!list || !list.length){ list = buildDefaultKpiFamilies(); saveKpiFamilies(list); return list; }
   const catalog = buildKpiCatalog();
+  if(!list || !list.length){
+    list = buildDefaultKpiFamilies(); saveKpiFamilies(list);
+    try{ localStorage.setItem(KPI_FAMILY_SEEN_KEY, JSON.stringify(catalog.map(m=>m.key))); }catch(e){}
+    return list;
+  }
+  let seen = null;
+  try{ seen = JSON.parse(localStorage.getItem(KPI_FAMILY_SEEN_KEY)); }catch(e){ seen = null; }
+  const seenSet = new Set(Array.isArray(seen) ? seen : []);
   const grouped = {};
   list.forEach(f=> (f.memberKeys||[]).forEach(k=> grouped[k]=true));
-  let changed = false;
+  let changed = false, seenChanged = false;
   catalog.forEach(m=>{
+    if(seenSet.has(m.key)) return;
+    seenSet.add(m.key); seenChanged = true;
     if(!grouped[m.key]){
       let fam = list.find(f=>f.module===m.module);
       if(!fam){ fam = { id: uid('fam'), name:m.module, module:m.module, memberKeys:[] }; list.push(fam); }
@@ -463,11 +477,15 @@ function loadKpiFamilies(){
     }
   });
   if(changed) saveKpiFamilies(list);
+  if(seenChanged){ try{ localStorage.setItem(KPI_FAMILY_SEEN_KEY, JSON.stringify([...seenSet])); }catch(e){} }
   return list;
 }
 function saveKpiFamilies(list){ localStorage.setItem(STORAGE_KEYS.kpiFamilies, JSON.stringify(list)); }
+function familiesForKpiKey(key){
+  return loadKpiFamilies().filter(f => (f.memberKeys||[]).indexOf(key)!==-1);
+}
 function familyForKpiKey(key){
-  return loadKpiFamilies().find(f => (f.memberKeys||[]).indexOf(key)!==-1) || null;
+  return familiesForKpiKey(key)[0] || null;
 }
 
 /* ---------- Dashboard Scheduling (Organization Setting) ----------

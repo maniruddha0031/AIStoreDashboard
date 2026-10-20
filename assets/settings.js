@@ -7,7 +7,7 @@
 const params = new URLSearchParams(location.search);
 const SCOPE = params.get('scope') === 'organization' ? 'organization' : 'global';
 const SCOPE_LABEL = SCOPE === 'organization' ? 'Organization Setting' : 'Global Setting';
-const SECTION = ['kpisettings','kpifamily','customkpi','manageaccount','appsettings','aidashboardsettings'].indexOf(params.get('section')) !== -1 ? params.get('section') : 'dashboards';
+const SECTION = ['kpisettings','kpifamily','customkpi','manageaccount','appsettings','aidashboardsettings','myorganization','kpiconfig'].indexOf(params.get('section')) !== -1 ? params.get('section') : 'dashboards';
 const AUTO_OPEN_SCHEDULE = params.get('opendashschedule') === '1';
 
 let dashboards = [];
@@ -34,7 +34,7 @@ let customKpiSearchTerm = '';
    Settings/Family/Custom KPI have no other entry point left; Dashboard
    Scheduling also has its original Organization Setting entry, which keeps
    the sidebar — see backFromDashSchedule()). */
-const NO_SIDEBAR_SECTIONS = ['manageaccount','appsettings','aidashboardsettings','kpisettings','kpifamily','customkpi'];
+const NO_SIDEBAR_SECTIONS = ['manageaccount','appsettings','aidashboardsettings','kpisettings','kpifamily','customkpi','myorganization','kpiconfig'];
 function updateSidebarVisibility(){
   const hide = NO_SIDEBAR_SECTIONS.indexOf(SECTION)!==-1 || (SECTION==='dashboards' && view==='dashSchedule' && AUTO_OPEN_SCHEDULE);
   const row = document.querySelector('.app-row');
@@ -46,7 +46,7 @@ function init(){
   apps = loadApps();
   if(AUTO_OPEN_SCHEDULE && SCOPE==='organization') view = 'dashSchedule';
   document.getElementById('scopeTitle').textContent = SCOPE_LABEL;
-  const SECTION_TITLES = { kpisettings:'KPI Settings', kpifamily:'KPI Family', customkpi:'Custom KPI', manageaccount:'Manage Account', appsettings:'App Settings', aidashboardsettings:'AI Dashboard' };
+  const SECTION_TITLES = { kpisettings:'KPI Settings', kpifamily:'KPI Family', customkpi:'Custom KPI', manageaccount:'Manage Account', appsettings:'App Settings', aidashboardsettings:'AI Dashboard', myorganization:'My Organization', kpiconfig:'KPIs Configuration' };
   document.title = (SECTION_TITLES[SECTION] || SCOPE_LABEL) + ' — AI Dashboard';
   document.getElementById('sideDashLink').classList.remove('active');
   document.getElementById('sideGlobalLink').classList.toggle('active', SECTION==='dashboards' && SCOPE==='global');
@@ -84,10 +84,17 @@ function render(){
   kpiSettingsView.classList.toggle('hidden', SECTION!=='kpisettings');
   kpiFamilyListView.classList.toggle('hidden', !(SECTION==='kpifamily' && kpiFamilyView==='list'));
   kpiFamilyEditorView.classList.toggle('hidden', !(SECTION==='kpifamily' && kpiFamilyView==='editor'));
+  renderKpiFamilyCrumbs();
+  // KPI Family screens use the full width (no reserved sidebar track); the
+  // editor pins its chrome and only scrolls the family/KPI list in the middle
+  document.querySelector('.app-row').classList.toggle('kf-full', SECTION==='kpifamily');
+  document.getElementById('mainContentScroll').classList.toggle('kfe-mode', SECTION==='kpifamily' && kpiFamilyView==='editor');
   customKpiListView.classList.toggle('hidden', SECTION!=='customkpi');
   manageAccountView.classList.toggle('hidden', SECTION!=='manageaccount');
   appSettingsView.classList.toggle('hidden', SECTION!=='appsettings');
   aiDashboardSettingsView.classList.toggle('hidden', SECTION!=='aidashboardsettings');
+  document.getElementById('myOrganizationView').classList.toggle('hidden', SECTION!=='myorganization');
+  document.getElementById('kpiConfigView').classList.toggle('hidden', SECTION!=='kpiconfig');
 
   // KPI Settings manages its own internal scroll (fixed title/search/table-head,
   // only the rows scroll) — the shared content wrapper must not also scroll it.
@@ -109,6 +116,8 @@ function render(){
     else renderKpiFamilyEditor();
   }else if(SECTION==='customkpi'){
     renderCustomKpiList();
+  }else if(SECTION==='kpiconfig'){
+    if(!kcKpis.length) initKpiConfig(); else renderKpiConfig();
   }else if(SECTION==='appsettings'){
     renderAppSettingsView();
   }
@@ -1020,7 +1029,9 @@ function filterApps(q){
    ============================================================ */
 const KPI_MODULE_COLORS = {
   Labor:'#4338ca', 'Food Cost':'#d97706', Sales:'#2563eb', Attendance:'#0891b2', Minors:'#dc2626',
-  Breaks:'#16a34a', Scheduling:'#7c3aed', 'Time Loss':'#ea580c', Other:'#64748b'
+  Breaks:'#16a34a', Scheduling:'#7c3aed', 'Time Loss':'#ea580c',
+  Cash:'#16a34a', Forecast:'#0891b2', Schedule:'#7c3aed', Inventory:'#d97706', DAR:'#2563eb', STR:'#db2777', Waste:'#dc2626', Checklist:'#0d9488',
+  Other:'#64748b'
 };
 function kpiModuleChip(mod){
   const c = KPI_MODULE_COLORS[mod] || KPI_MODULE_COLORS.Other;
@@ -1090,18 +1101,101 @@ function setKpiDirection(key, val){
    Add Metric overlay picker (see lmFamilyMembersFor in trend-modal.js
    and lmBuildAddMetricMenu/lmApplyOverlay in trend-modal-engine.js).
    ============================================================ */
-function familyDataTypes(fam){
-  const cat = buildKpiCatalog();
-  const units = new Set();
-  (fam.memberKeys||[]).forEach(k=>{
-    const m = cat.find(c=>c.key===k);
-    if(m) units.add(m.unit==='$'?'$':m.unit==='%'?'%':'#');
-  });
-  return [...units];
+/* KPI Family runs on the KPIs Configuration list (Manage Account > My
+   Organization > KPIs Configuration, kpi-config-data.js): its modules
+   (Cash, Labor, Forecast…) seed the families and its KPIs are the members.
+   Supporting KPIs play no part here. Families are seeded once from the
+   modules and then edited freely on this screen. */
+const KF_FAMILIES_KEY = 'aidash_kpi_families_by_module_v1';
+function kfUnitOfConfig(k){
+  if(k.fmt === 'DOLLAR') return '$';
+  if(k.fmt === 'HOURS') return 'h';
+  return /%|percent|percetage/i.test(k.name) ? '%' : '#';
 }
+function kfCatalog(){
+  return loadKpiConfig().map(k => ({ key:k.id, label:k.name, unit:kfUnitOfConfig(k), module:k.module, dashLabel:k.module, section:'' }));
+}
+function kfDefaultFamilies(){
+  const cat = loadKpiConfig();
+  return KC_MODULES.map(mod => ({ id: uid('fam'), name: mod, module: mod, memberKeys: cat.filter(k => k.module === mod).map(k => k.id) }))
+    .filter(f => f.memberKeys.length);
+}
+function kfLoadFamilies(){
+  try{ const list = JSON.parse(localStorage.getItem(KF_FAMILIES_KEY)); if(Array.isArray(list) && list.length) return list; }catch(e){}
+  const seeded = kfDefaultFamilies();
+  kfSaveFamilies(seeded);
+  return seeded;
+}
+function kfSaveFamilies(list){ try{ localStorage.setItem(KF_FAMILIES_KEY, JSON.stringify(list)); }catch(e){} }
+/* Called when KPIs Configuration saves (or resets): a KPI whose module
+   changed leaves its old module's family and joins the new module's family
+   (created if there isn't one yet). Families an admin made themselves —
+   not tied to a module — are left exactly as they are. */
+function kfSyncModuleChanges(before, after){
+  if(!localStorage.getItem(KF_FAMILIES_KEY)) return; // not seeded yet — the seed will read the new modules anyway
+  const oldMod = {};
+  before.forEach(k => { oldMod[k.id] = k.module; });
+  const moved = after.filter(k => oldMod[k.id] !== undefined && oldMod[k.id] !== k.module);
+  if(!moved.length) return;
+  const families = kfLoadFamilies();
+  moved.forEach(k => {
+    families.filter(f => f.module === oldMod[k.id]).forEach(f => { f.memberKeys = (f.memberKeys||[]).filter(x => x !== k.id); });
+    let target = families.find(f => f.module === k.module);
+    if(!target){ target = { id: uid('fam'), name: k.module, module: k.module, memberKeys: [] }; families.push(target); }
+    if(target.memberKeys.indexOf(k.id) === -1) target.memberKeys.push(k.id);
+  });
+  kfSaveFamilies(families);
+}
+
+const KF_PALETTE = ['#2563eb','#7c3aed','#0891b2','#16a34a','#d97706','#dc2626','#db2777','#4f46e5'];
+const KF_ICONS = { Labor:'users', 'Food Cost':'utensils', Sales:'banknote', Attendance:'calendar-check', Minors:'shield-alert',
+  Breaks:'coffee', Scheduling:'calendar-clock', 'Time Loss':'timer-off', Payroll:'wallet', Cash:'banknote',
+  Forecast:'trending-up', Schedule:'calendar-days', Inventory:'package', DAR:'clipboard-list', STR:'store', Waste:'trash-2', Checklist:'list-checks' };
+let kfGroupsSnapshot = null;    // editor: families as they were when the editor opened — drives the grouping
+let kfEdSearch = '';
+
+function kfUnit(m){ return ['$','%','#','h'].indexOf(m.unit) !== -1 ? m.unit : '#'; }
+function kfColor(f){ return KPI_MODULE_COLORS[f.module] || KPI_MODULE_COLORS[f.name] || KF_PALETTE[kpiHash(f.name||'') % KF_PALETTE.length]; }
+function kfIcon(f){ return KF_ICONS[f.module] || KF_ICONS[f.name] || 'layers'; }
+function kfSource(m){ return [m.dashLabel, m.section].filter(Boolean).join(' · '); }
+function kfCatalogByKey(){ const map = {}; kfCatalog().forEach(m => map[m.key] = m); return map; }
+/* Same-named KPIs (Labor % on Store Health, Timeloss and DAR; Food Cost %…)
+   show once on this screen. That one entry stands for every placement with
+   the name: adding/removing it adds/removes all of them, so the trend
+   popup's Add Metric keeps working on whichever dashboard it's opened from. */
+function kfLabelKeys(key){
+  const m = kfCatalogByKey()[key];
+  return m ? kfCatalog().filter(c => c.label === m.label).map(c => c.key) : [key];
+}
+function kfUniq(list){ const seen = {}; return list.filter(m => seen[m.label] ? false : (seen[m.label] = true)); }
+function kfHas(fam, key){ const keys = kfLabelKeys(key); return (fam.memberKeys||[]).some(k => keys.indexOf(k) !== -1); }
+function kfSetHas(fam, key, on){
+  const keys = kfLabelKeys(key);
+  fam.memberKeys = (fam.memberKeys||[]).filter(k => keys.indexOf(k) === -1);
+  if(on) fam.memberKeys.push(...keys);
+}
+function kfMembers(fam){ const byKey = kfCatalogByKey(); return kfUniq((fam.memberKeys||[]).map(k => byKey[k]).filter(Boolean)); }
+function familyDataTypes(fam){
+  const byKey = kfCatalogByKey();
+  return [...new Set((fam.memberKeys||[]).map(k => byKey[k]).filter(Boolean).map(kfUnit))];
+}
+function kfToast(msg){
+  const el = document.getElementById('kfToast');
+  if(!el) return;
+  el.innerHTML = `<i data-lucide="check-circle-2"></i><span>${msg}</span>`;
+  if(window.lucide) lucide.createIcons();
+  el.classList.add('show');
+  clearTimeout(kfToast._t);
+  kfToast._t = setTimeout(() => el.classList.remove('show'), 2400);
+}
+function kfNameTaken(name, exceptId){
+  return kfLoadFamilies().some(f => f.id !== exceptId && f.name.trim().toLowerCase() === name.toLowerCase());
+}
+
+/* ---------------- KPI Family list (summary table) ---------------- */
 function renderKpiFamilyList(){
   const wrap = document.getElementById('kpiFamilyRows');
-  const families = loadKpiFamilies();
+  const families = kfLoadFamilies();
   if(!families.length){
     wrap.innerHTML = `<tr><td colspan="4" class="px-5 py-8 text-center text-slate-400">No families yet.</td></tr>`;
     return;
@@ -1111,8 +1205,8 @@ function renderKpiFamilyList(){
     return `
     <tr class="border-b border-slate-100">
       <td class="px-5 py-3 font-bold text-slate-800">${f.name}</td>
-      <td class="px-5 py-3 text-center text-slate-600">${(f.memberKeys||[]).length}</td>
-      <td class="px-5 py-3 text-center">${types.map(t=>kpiUnitChip(t)).join(' ')}${types.length>1?' <span style="font-size:11px;color:#7c3aed;font-weight:700;">2-axis</span>':''}</td>
+      <td class="px-5 py-3 text-center text-slate-600">${kfMembers(f).length}</td>
+      <td class="px-5 py-3 text-center">${types.map(t=>kfeUnitBadge(t)).join(' ')}${types.length>1?' <span style="font-size:11px;color:#7c3aed;font-weight:700;">2-axis</span>':''}</td>
       <td class="px-5 py-3 text-center">
         <div class="flex items-center justify-center gap-2">
           <button class="icon-btn" title="Edit" onclick="openKpiFamilyEditor('${f.id}')"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
@@ -1123,78 +1217,423 @@ function renderKpiFamilyList(){
   }).join('');
   if(window.lucide) lucide.createIcons();
 }
-function openKpiFamilyEditor(id){
-  const families = loadKpiFamilies();
-  if(id){
-    isNewFamily = false;
-    editingFamily = clone(families.find(f=>f.id===id));
-  }else{
-    isNewFamily = true;
-    editingFamily = { id: uid('fam'), name:'New Family', module:'', memberKeys:[] };
-  }
-  kpiFamilyView = 'editor';
-  render();
-}
-function backToKpiFamilyList(){
-  kpiFamilyView = 'list';
-  editingFamily = null;
-  render();
-}
-function saveKpiFamilyEditor(){
-  const families = loadKpiFamilies();
-  const nameInput = document.getElementById('kpiFamilyNameInput');
-  editingFamily.name = (nameInput.value || '').trim() || editingFamily.name;
-  if(isNewFamily){
-    families.push(editingFamily);
-  }else{
-    const idx = families.findIndex(f=>f.id===editingFamily.id);
-    if(idx!==-1) families[idx] = editingFamily; else families.push(editingFamily);
-  }
-  saveKpiFamilies(families);
-  backToKpiFamilyList();
-}
 function deleteKpiFamily(id){
-  const families = loadKpiFamilies();
+  const families = kfLoadFamilies();
   const fam = families.find(f=>f.id===id);
   if(!fam) return;
-  openSectionsConfirm('Delete Family', `Delete "${fam.name}"? Its member KPIs will no longer share an Add Metric overlay group.`, ()=>{
-    saveKpiFamilies(families.filter(f=>f.id!==id));
+  openSectionsConfirm('Delete Family', `Delete "${fam.name}"? Its KPIs stay in any other families they belong to.`, ()=>{
+    kfSaveFamilies(families.filter(f=>f.id!==id));
     renderKpiFamilyList();
   });
 }
-function toggleKpiFamilyMember(key){
-  const idx = editingFamily.memberKeys.indexOf(key);
-  if(idx!==-1) editingFamily.memberKeys.splice(idx,1);
-  else editingFamily.memberKeys.push(key);
-  renderKpiFamilyMemberPicker();
+
+/* ---------------- Add Family popup (name + multi-select KPI dropdown) ---------------- */
+let addFamilyKeys = [];
+let addFamilySearchTerm = '';
+function openAddFamilyModal(){
+  addFamilyKeys = [];
+  addFamilySearchTerm = '';
+  const name = document.getElementById('addFamilyName');
+  name.value = ''; name.classList.remove('kf-invalid');
+  document.getElementById('addFamilySearch').value = '';
+  document.getElementById('addFamilyPanel').classList.add('hidden');
+  renderAddFamilyChips();
+  renderAddFamilyOptions();
+  document.getElementById('addFamilyModal').classList.remove('hidden');
+  if(window.lucide) lucide.createIcons();
+  setTimeout(() => name.focus(), 50);
 }
-function renderKpiFamilyMemberPicker(){
-  const wrap = document.getElementById('kpiFamilyMemberPicker');
-  const cat = buildKpiCatalog();
-  const byModule = {};
-  cat.forEach(m=>{ (byModule[m.module] = byModule[m.module]||[]).push(m); });
-  const modules = Object.keys(byModule).sort();
-  wrap.innerHTML = modules.map(mod => `
-    <div class="mb-4">
-      <div class="mb-2">${kpiModuleChip(mod)}</div>
-      <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr));">
-        ${byModule[mod].map(m => {
-          const checked = editingFamily.memberKeys.indexOf(m.key)!==-1;
-          return `
-          <label class="flex items-center gap-2 px-3 py-2 rounded-lg border ${checked?'border-blue-400 bg-blue-50':'border-slate-200'} cursor-pointer text-[13px]">
-            <input type="checkbox" ${checked?'checked':''} onchange="toggleKpiFamilyMember('${m.key}')">
-            <span class="flex-1">${m.label}</span>
-            ${kpiUnitChip(m.unit)}
-          </label>`;
-        }).join('')}
-      </div>
-    </div>`).join('');
+function closeAddFamilyModal(){
+  document.getElementById('addFamilyModal').classList.add('hidden');
+  document.getElementById('addFamilyPanel').classList.add('hidden');
+}
+function toggleAddFamilyDropdown(e){
+  if(e && e.target.closest('.kf-ms-chip-x')) return;
+  const panel = document.getElementById('addFamilyPanel');
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden')) document.getElementById('addFamilySearch').focus();
+}
+// close the dropdown on any click outside it
+document.addEventListener('click', function(e){
+  const ms = document.getElementById('addFamilyMs');
+  const panel = document.getElementById('addFamilyPanel');
+  if(ms && panel && !panel.classList.contains('hidden') && !ms.contains(e.target)) panel.classList.add('hidden');
+});
+function onAddFamilySearch(v){ addFamilySearchTerm = v; renderAddFamilyOptions(); }
+function toggleAddFamilyKey(key){
+  const i = addFamilyKeys.indexOf(key);
+  if(i === -1) addFamilyKeys.push(key); else addFamilyKeys.splice(i,1);
+  renderAddFamilyChips();
+  renderAddFamilyOptions();
+}
+function clearAddFamilySelection(e){
+  if(e) e.stopPropagation();
+  addFamilyKeys = [];
+  renderAddFamilyChips();
+  renderAddFamilyOptions();
+}
+function renderAddFamilyChips(){
+  const byKey = kfCatalogByKey();
+  const wrap = document.getElementById('addFamilyChips');
+  wrap.innerHTML = addFamilyKeys.length ? addFamilyKeys.map(k => byKey[k]).filter(Boolean).map(m => `
+    <span class="kf-ms-chip" title="${escAttr(kfSource(m))}">
+      <span class="kf-unit">${kfUnit(m)}</span>${m.label}
+      <button type="button" class="kf-ms-chip-x" onclick="toggleAddFamilyKey('${m.key}')" title="Remove"><i data-lucide="x"></i></button>
+    </span>`).join('') : `<span class="kf-ms-placeholder">Select KPIs…</span>`;
+  document.getElementById('addFamilyCount').textContent = addFamilyKeys.length + ' selected';
   if(window.lucide) lucide.createIcons();
 }
+function renderAddFamilyOptions(){
+  const term = addFamilySearchTerm.trim().toLowerCase();
+  const byModule = {};
+  kfUniq(kfCatalog()).filter(m => !term || m.label.toLowerCase().includes(term))
+    .forEach(m => { (byModule[m.module] = byModule[m.module] || []).push(m); });
+  const wrap = document.getElementById('addFamilyOptions');
+  const scroll = wrap.scrollTop;
+  wrap.innerHTML = Object.keys(byModule).sort().map(mod => `
+    <div class="kf-ms-group">${mod}</div>
+    ${byModule[mod].map(m => {
+      const on = addFamilyKeys.indexOf(m.key) !== -1;
+      return `
+      <div class="kf-ms-opt${on?' on':''}" onclick="toggleAddFamilyKey('${m.key}')">
+        <span class="kf-check"><i data-lucide="check"></i></span>
+        <span class="kf-ms-opt-main"><span class="kf-ms-opt-label">${m.label}</span></span>
+        <span class="kf-unit">${kfUnit(m)}</span>
+      </div>`;
+    }).join('')}`).join('') || `<div class="kf-ms-empty">No KPIs match "${escAttr(addFamilySearchTerm)}".</div>`;
+  if(window.lucide) lucide.createIcons();
+  wrap.scrollTop = scroll;
+}
+function saveAddFamilyModal(){
+  const input = document.getElementById('addFamilyName');
+  const name = (input.value || '').trim();
+  if(!name){ input.classList.add('kf-invalid'); input.focus(); kfToast('Please enter a family name'); return; }
+  if(kfNameTaken(name, null)){ input.classList.add('kf-invalid'); input.focus(); kfToast(`A family named "${escAttr(name)}" already exists`); return; }
+  if(!addFamilyKeys.length){ kfToast('Select at least one KPI'); document.getElementById('addFamilyPanel').classList.remove('hidden'); return; }
+  const families = kfLoadFamilies();
+  families.push({ id: uid('fam'), name, module:'', memberKeys: [...new Set([].concat(...addFamilyKeys.map(kfLabelKeys)))] });
+  kfSaveFamilies(families);
+  closeAddFamilyModal();
+  renderKpiFamilyList();
+  kfToast(`Family <b>${escAttr(name)}</b> created with ${addFamilyKeys.length} KPI${addFamilyKeys.length===1?'':'s'}`);
+}
+
+/* ---------------- KPI Family editor ----------------
+   Works on a draft of ALL families (kfeDraft): ticking a KPI changes the
+   family being edited, while a KPI's "Families" popover can put it in or
+   take it out of any family. Nothing is saved until "Save"; the
+   family switcher at the top moves between families inside the same draft.
+   KPIs are grouped by the families as they were when the editor opened
+   (kfGroupsSnapshot), so a KPI doesn't jump between groups mid-edit. */
+
+let kfeDraft = null;
+let kfeSaved = '';
+let kfeUnit = '', kfeOnlyIn = false, kfeOnlyShared = false;
+let kfeCollapsed = {};
+const KFE_UNIT_STYLE = { '$':{bg:'#dcfce7',fg:'#15803d',name:'Currency'}, '%':{bg:'#dbeafe',fg:'#1d4ed8',name:'Percent'}, '#':{bg:'#f3e8ff',fg:'#7e22ce',name:'Count'}, 'h':{bg:'#fef3c7',fg:'#b45309',name:'Hours'} };
+
+function kfeUnitBadge(u){ const s = KFE_UNIT_STYLE[u]; return `<span class="kfe-unit" style="background:${s.bg};color:${s.fg}">${u}</span>`; }
+function kfeFamsFor(key){ return kfeDraft.filter(f => kfHas(f, key)); }
+function kfeIsDirty(){ return !!kfeDraft && JSON.stringify(kfeDraft) !== kfeSaved; }
+function kfeFamChip(f){ const c = kfColor(f); return `<span class="kfe-fchip" style="--kf-c:${c}">${f.name}</span>`; }
+
+function openKpiFamilyEditor(id){
+  const families = kfLoadFamilies();
+  if(!families.find(f=>f.id===id)) return;
+  isNewFamily = false;
+  kfeDraft = clone(families);
+  kfeSaved = JSON.stringify(kfeDraft);
+  kfGroupsSnapshot = clone(families);
+  editingFamily = kfeDraft.find(f=>f.id===id);
+  kfEdSearch = ''; kfeUnit = ''; kfeOnlyIn = false; kfeOnlyShared = false; kfeCollapsed = {};
+  kpiFamilyView = 'editor';
+  render();
+  window.scrollTo(0,0);
+}
+function backToKpiFamilyList(){
+  function doBack(){
+    closeKfePop();
+    kpiFamilyView = 'list';
+    editingFamily = null; kfeDraft = null; kfGroupsSnapshot = null;
+    render();
+  }
+  if(kfeIsDirty()) openSectionsConfirm('Discard changes?', 'You have unsaved changes to your KPI families. Leaving now will discard them.', doBack);
+  else doBack();
+}
+// Breadcrumb strip under the top bar — KPI Family list and editor both show it.
+function renderKpiFamilyCrumbs(){
+  const bar = document.getElementById('kfeCrumbBar');
+  if(!bar) return;
+  const show = SECTION === 'kpifamily';
+  bar.classList.toggle('hidden', !show);
+  if(!show) return;
+  const sep = '<i data-lucide="chevron-right" class="kfe-crumb-sep"></i>';
+  bar.innerHTML = kpiFamilyView === 'editor'
+    ? `<a onclick="kfeLeaveToSettings()">Settings</a>${sep}<a onclick="backToKpiFamilyList()">KPI Families</a>${sep}<b>Edit family</b>`
+    : `<a onclick="kfeLeaveToSettings()">Settings</a>${sep}<b>KPI Families</b>`;
+  if(window.lucide) lucide.createIcons();
+}
+// Breadcrumb "Settings" — back to the AI Dashboard settings page, same unsaved-changes guard as Back.
+function kfeLeaveToSettings(){
+  const go = () => { location.href = 'settings.html?section=aidashboardsettings'; };
+  if(kfeIsDirty()) openSectionsConfirm('Discard changes?', 'You have unsaved changes to your KPI families. Leaving now will discard them.', go);
+  else go();
+}
+function saveKpiFamilyEditor(){
+  const names = kfeDraft.map(f => f.name.trim().toLowerCase());
+  if(names.some(n => !n)){ kfToast('Every family needs a name'); return; }
+  if(new Set(names).size !== names.length){ kfToast('Two families have the same name'); return; }
+  kfSaveFamilies(kfeDraft);
+  kfeSaved = JSON.stringify(kfeDraft);
+  kfToast('KPI families saved');
+  backToKpiFamilyList();
+}
+
+/* family switcher + rename */
+function toggleKfeSwitch(e){
+  if(e) e.stopPropagation();
+  const menu = document.getElementById('kfeSwitchMenu');
+  menu.innerHTML = [...kfeDraft].sort((a,b)=>a.name.localeCompare(b.name)).map(f => `
+    <button type="button" class="kfe-switch-opt${f===editingFamily?' on':''}" onclick="kfeSwitchTo('${f.id}')">
+      <span class="kfe-dot" style="background:${kfColor(f)}"></span><span class="kfe-switch-name">${f.name}</span>
+      <span class="kfe-switch-n">${kfMembers(f).length} KPIs</span>
+      ${f===editingFamily ? '<i data-lucide="check"></i>' : ''}
+    </button>`).join('');
+  menu.classList.toggle('hidden');
+  if(window.lucide) lucide.createIcons();
+}
+function kfeSwitchTo(id){
+  editingFamily = kfeDraft.find(f=>f.id===id) || editingFamily;
+  document.getElementById('kfeSwitchMenu').classList.add('hidden');
+  renderKpiFamilyMemberPicker();
+}
+function startKfeRename(){
+  const input = document.getElementById('kpiFamilyNameInput');
+  input.value = editingFamily.name;
+  input.classList.remove('hidden');
+  document.getElementById('kfeSwitch').classList.add('hidden');
+  document.getElementById('kfeRenameBtn').classList.add('hidden');
+  input.focus(); input.select();
+}
+function commitKfeRename(){
+  const input = document.getElementById('kpiFamilyNameInput');
+  const name = (input.value || '').trim();
+  if(name && name !== editingFamily.name){
+    if(kfeDraft.some(f => f !== editingFamily && f.name.trim().toLowerCase() === name.toLowerCase())) kfToast(`A family named "${escAttr(name)}" already exists`);
+    else editingFamily.name = name;
+  }
+  input.classList.add('hidden');
+  document.getElementById('kfeSwitch').classList.remove('hidden');
+  document.getElementById('kfeRenameBtn').classList.remove('hidden');
+  renderKpiFamilyMemberPicker();
+}
+
+/* membership changes */
+function toggleKpiFamilyMember(key){ kfeToggleMembership(editingFamily.id, key); }
+function kfeToggleMembership(famId, key){
+  const f = kfeDraft.find(x => x.id === famId);
+  if(!f) return;
+  kfSetHas(f, key, !kfHas(f, key));
+  renderKpiFamilyMemberPicker();
+  if(!document.getElementById('kfePop').classList.contains('hidden')) renderKfePop(key);
+}
+function kfSetGroup(groupId, add){
+  kfeGroupItems(kfEditorGroups().find(g => g.id === groupId)).forEach(m => kfSetHas(editingFamily, m.key, add));
+  renderKpiFamilyMemberPicker();
+}
+function clearKfeFamily(){
+  const n = kfMembers(editingFamily).length;
+  if(!n) return;
+  openSectionsConfirm('Clear family?', `Remove all ${n} KPIs from "${editingFamily.name}"? They stay in any other families they belong to. Nothing is saved until you click Save.`, () => {
+    editingFamily.memberKeys = [];
+    renderKpiFamilyMemberPicker();
+  });
+}
+
+/* groups + filters */
+function kfEditorGroups(){
+  const inAny = new Set();
+  kfGroupsSnapshot.forEach(f => (f.memberKeys||[]).forEach(k => inAny.add(k)));
+  const groups = [...kfGroupsSnapshot].sort((a,b) => a.name.localeCompare(b.name));
+  const none = kfUniq(kfCatalog().filter(m => !kfLabelKeys(m.key).some(k => inAny.has(k)))).map(m => m.key);
+  if(none.length) groups.push({ id:'__none', name:'Not in any family', memberKeys:none, isNone:true });
+  return groups;
+}
+function kfeGroupItems(g, filtered){
+  if(!g) return [];
+  const byKey = kfCatalogByKey();
+  const term = kfEdSearch.trim().toLowerCase();
+  return kfUniq((g.memberKeys||[]).map(k => byKey[k]).filter(Boolean)).filter(m => !filtered || (
+    (!term || m.label.toLowerCase().includes(term)) &&
+    (!kfeUnit || kfUnit(m) === kfeUnit) &&
+    (!kfeOnlyIn || kfHas(editingFamily, m.key)) &&
+    (!kfeOnlyShared || kfeFamsFor(m.key).length > 1)));
+}
+function onKfEdSearch(v){ kfEdSearch = v; renderKpiFamilyMemberPicker(); }
+function kfeSetUnit(u){ kfeUnit = u; renderKpiFamilyMemberPicker(); }
+function kfeToggleGroup(id){ kfeCollapsed[id] = !kfeCollapsed[id]; renderKpiFamilyMemberPicker(); }
+function kfeScrollTo(id){
+  kfeCollapsed[id] = false;
+  renderKpiFamilyMemberPicker();
+  const el = document.getElementById('kfeGroup-' + id);
+  if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function kfeFamPill(m){
+  const fams = kfeFamsFor(m.key);
+  const dots = fams.slice(0,3).map(f => `<span class="kfe-dot" style="background:${kfColor(f)}"></span>`).join('');
+  const text = fams.length === 0 ? 'No family' : fams.length === 1 ? fams[0].name : fams.length + ' families';
+  return `<button type="button" class="kfe-fam-pill${fams.length?'':' is-empty'}" title="Choose every family this KPI belongs to" onclick="openKfePop(event,'${m.key}')"><span class="kfe-dots">${dots}</span>${text}<i data-lucide="chevron-down"></i></button>`;
+}
+function renderKpiFamilyMemberPicker(){
+  if(!editingFamily || !kfeDraft) return;
+  const byKey = kfCatalogByKey();
+  const fc = kfColor(editingFamily);
+  // header
+  document.getElementById('kfeSwitchDot').style.background = fc;
+  document.getElementById('kfeSwitchLabel').textContent = `${editingFamily.name} (${kfMembers(editingFamily).length} KPIs)`;
+  document.getElementById('kfeDirty').classList.toggle('hidden', !kfeIsDirty());
+  // toolbar
+  document.getElementById('kfeUnitSeg').innerHTML = [['','All'],['$','$'],['%','%'],['#','#'],['h','Hrs']].map(([v,l]) =>
+    `<button type="button" class="${kfeUnit===v?'on':''}" onclick="kfeSetUnit('${v}')">${l}</button>`).join('');
+  const s = document.getElementById('kfEdSearch'); if(s.value !== kfEdSearch) s.value = kfEdSearch;
+  document.getElementById('kfeOnlyIn').checked = kfeOnlyIn;
+  document.getElementById('kfeOnlyShared').checked = kfeOnlyShared;
+
+  const groups = kfEditorGroups();
+  // left: categories
+  document.getElementById('kfeCats').innerHTML = groups.map(g => {
+    const all = kfeGroupItems(g, false);
+    const picked = all.filter(m => kfHas(editingFamily, m.key)).length;
+    return `
+    <button type="button" class="kfe-cat${g.id===editingFamily.id?' is-editing':''}" onclick="kfeScrollTo('${g.id}')">
+      <span class="kfe-dot" style="background:${g.isNone ? '#94a3b8' : kfColor(g)}"></span>
+      <span class="kfe-cat-name">${g.name}</span>
+      <span class="kfe-cat-n${picked?' on':''}">${picked}/${all.length}</span>
+    </button>`;
+  }).join('');
+
+  // middle: groups
+  const html = groups.map(g => {
+    const items = kfeGroupItems(g, true);
+    if(!items.length) return '';
+    const all = kfeGroupItems(g, false);
+    const picked = all.filter(m => kfHas(editingFamily, m.key)).length;
+    const visPicked = items.filter(m => kfHas(editingFamily, m.key)).length;
+    const allIn = visPicked === items.length;
+    const c = g.isNone ? '#94a3b8' : kfColor(g);
+    const collapsed = !!kfeCollapsed[g.id];
+    return `
+    <div class="kfe-card kfe-group${collapsed?' is-collapsed':''}" id="kfeGroup-${g.id}" style="--kf-c:${c}">
+      <div class="kfe-group-head">
+        <button type="button" class="kfe-chev" onclick="kfeToggleGroup('${g.id}')" title="${collapsed?'Expand':'Collapse'}"><i data-lucide="${collapsed?'chevron-right':'chevron-down'}"></i></button>
+        <span class="kfe-fchip kfe-fchip-lg" onclick="kfeToggleGroup('${g.id}')">${g.name}</span>
+        ${g.id===editingFamily.id ? '<span class="kfe-editing-tag">Editing</span>' : ''}
+        <span class="kfe-group-meta">${picked} of ${all.length} in ${editingFamily.name}</span>
+        <button type="button" class="kf-link kfe-group-act" onclick="kfSetGroup('${g.id}', ${!allIn})">${allIn ? 'Remove all' : 'Add all'}</button>
+      </div>
+      ${collapsed ? '' : `
+      <div class="kfe-items">
+        ${items.map(m => {
+          const on = kfHas(editingFamily, m.key);
+          return `
+          <div class="kfe-kpi${on?' on':''}">
+            <label class="kfe-kpi-top" title="${escAttr(kfSource(m))}">
+              <input type="checkbox" ${on?'checked':''} onchange="toggleKpiFamilyMember('${m.key}')">
+              <span class="kfe-kpi-label">${m.label}</span>
+              ${kfeUnitBadge(kfUnit(m))}
+            </label>
+            ${kfeFamPill(m)}
+          </div>`;
+        }).join('')}
+      </div>`}
+    </div>`;
+  }).join('');
+  document.getElementById('kpiFamilyMemberPicker').innerHTML = html ||
+    `<div class="kfe-card kfe-empty"><i data-lucide="search-x"></i>No KPIs match these filters.</div>`;
+
+  // right: summary
+  const members = kfMembers(editingFamily);
+  const counts = { '$':0, '%':0, '#':0, 'h':0 };
+  members.forEach(m => counts[kfUnit(m)]++);
+  const types = Object.keys(counts).filter(u => counts[u]);
+  const shared = members.filter(m => kfeFamsFor(m.key).length > 1).length;
+  document.getElementById('kfeSummary').innerHTML = `
+    <div class="kfe-sum-head"><span class="kfe-side-title">${editingFamily.name} family</span><span class="kfe-sum-n">${members.length} KPIs</span></div>
+    ${['$','%','#','h'].map(u => `
+      <div class="kfe-dist">
+        ${kfeUnitBadge(u)}<span class="kfe-dist-name">${KFE_UNIT_STYLE[u].name}</span>
+        <span class="kfe-bar"><span style="width:${members.length ? Math.round(counts[u]/members.length*100) : 0}%;background:${KFE_UNIT_STYLE[u].fg}"></span></span>
+        <span class="kfe-dist-n">${counts[u]}</span>
+      </div>`).join('')}
+    ${types.length > 1 ? `
+    <div class="kfe-axis"><i data-lucide="line-chart"></i><div><b>2-axis chart</b>Picks span ${types.join(', ')} — the trend popup will split them across two axes.</div></div>` : ''}
+    <div class="kfe-sum-foot"><i data-lucide="layers"></i>${shared} KPI${shared===1?' is':'s are'} also used in other families</div>`;
+
+  // right: members
+  document.getElementById('kfeMemberList').innerHTML = members.map(m => `
+    <div class="kfe-member">
+      <div class="kfe-member-top">
+        <span class="kfe-member-label" title="${escAttr(kfSource(m))}">${m.label}</span>
+        ${kfeUnitBadge(kfUnit(m))}
+        <button type="button" class="kfe-x" title="Remove from ${escAttr(editingFamily.name)}" onclick="toggleKpiFamilyMember('${m.key}')"><i data-lucide="x"></i></button>
+      </div>
+      <div class="kfe-member-fams">${kfeFamsFor(m.key).map(kfeFamChip).join('')}</div>
+    </div>`).join('') || `<div class="kfe-member-empty"><i data-lucide="layers"></i><b>No KPIs yet</b>Tick KPIs in the list to add them.</div>`;
+  if(window.lucide) lucide.createIcons();
+}
+
+/* "Families" popover — every family a KPI belongs to */
+let kfePopKey = null;
+function openKfePop(e, key){
+  e.stopPropagation();
+  const pop = document.getElementById('kfePop');
+  if(kfePopKey === key && !pop.classList.contains('hidden')){ closeKfePop(); return; }
+  kfePopKey = key;
+  renderKfePop(key);
+  pop.classList.remove('hidden');
+  const r = e.currentTarget.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let top = r.bottom + 6;
+  if(top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  pop.style.top = top + 'px';
+  pop.style.left = Math.min(r.left, window.innerWidth - w - 12) + 'px';
+}
+function renderKfePop(key){
+  const m = kfCatalogByKey()[key];
+  if(!m) return;
+  const fams = kfeFamsFor(key);
+  document.getElementById('kfePop').innerHTML = `
+    <div class="kfe-pop-head"><span>Families for</span><b>${m.label} <em>(${kfUnit(m)})</em></b></div>
+    <div class="kfe-pop-list">
+      ${[...kfeDraft].sort((a,b)=>a.name.localeCompare(b.name)).map(f => {
+        const on = fams.indexOf(f) !== -1;
+        return `
+        <label class="kfe-pop-opt">
+          <input type="checkbox" ${on?'checked':''} onchange="kfeToggleMembership('${f.id}','${key}')">
+          <span class="kfe-dot" style="background:${kfColor(f)}"></span><span class="kfe-pop-name">${f.name}</span>
+          ${f===editingFamily ? '<span class="kfe-editing-tag">Editing</span>' : ''}
+        </label>`;
+      }).join('')}
+    </div>
+    <div class="kfe-pop-foot"><span>In ${fams.length} famil${fams.length===1?'y':'ies'}</span><button type="button" class="pill-btn pill-blue" onclick="closeKfePop()">Done</button></div>`;
+}
+function closeKfePop(){
+  kfePopKey = null;
+  const pop = document.getElementById('kfePop');
+  if(pop) pop.classList.add('hidden');
+}
+document.addEventListener('click', function(e){
+  const pop = document.getElementById('kfePop');
+  if(!document.body.contains(e.target)) return; // re-rendered while handling this click (e.g. a popover checkbox)
+  if(pop && !pop.classList.contains('hidden') && !pop.contains(e.target) && !e.target.closest('.kfe-fam-pill')) closeKfePop();
+  const menu = document.getElementById('kfeSwitchMenu');
+  if(menu && !menu.classList.contains('hidden') && !e.target.closest('#kfeSwitch')) menu.classList.add('hidden');
+});
+window.addEventListener('scroll', function(e){ const pop = document.getElementById('kfePop'); if(pop && e.target instanceof Node && pop.contains(e.target)) return; closeKfePop(); }, true);
+
 function renderKpiFamilyEditor(){
   if(!editingFamily) return;
-  const input = document.getElementById('kpiFamilyNameInput');
-  if(input) input.value = editingFamily.name;
   renderKpiFamilyMemberPicker();
 }
 

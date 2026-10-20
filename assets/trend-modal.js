@@ -125,9 +125,11 @@ function tmBuildMetricCatalog(){
    belongs to (KPI Family screen in Settings) drives which other metrics can
    be overlaid onto its trend chart, replacing the old same-type-only match. */
 function lmFamilyMembersFor(key){
-  if(typeof familyForKpiKey !== 'function') return null;
-  const fam = familyForKpiKey(key);
-  return fam ? fam.memberKeys : null;
+  if(typeof familiesForKpiKey !== 'function') return null;
+  // a KPI can belong to several families — overlay options are all of them combined
+  const fams = familiesForKpiKey(key);
+  if(!fams.length) return null;
+  return [...new Set([].concat(...fams.map(f => f.memberKeys || [])))];
 }
 
 /* ---------------- Entry points (called from dashboard-render.js) ---------------- */
